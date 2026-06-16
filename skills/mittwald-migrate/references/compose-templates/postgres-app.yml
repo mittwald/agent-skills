@@ -1,0 +1,59 @@
+# Template: app + PostgreSQL in a Mittwald stack.
+#
+# Usage:
+#   - Pass the resolved YAML as the `state` parameter to mcp__mittwald__mittwald_stack_deploy.
+#   - Replace <PLACEHOLDERS> below.
+#   - Bind-mount paths are anchored at /files/<APP_SHORT> on the project host.
+#     Make sure to mkdir them via Project-Host-SSH (or let stack_deploy create them
+#     on first deploy, depending on platform behavior).
+#
+# Conventions baked in:
+#   - Service name `postgresql` doubles as in-stack hostname (Pitfall #16).
+#   - Named volume `pgdata` for the datadir (container-internal).
+#   - Bind-mount `/files/<APP_SHORT>/postgres-dumps` shared with the postgresql container
+#     for migration use (read+write so pg_dump or pg_restore both work).
+#   - Bind-mount `/files/<APP_SHORT>/uploads` shared with the app container for assets.
+#
+# Replace and validate before deploy.
+
+services:
+
+  postgresql:
+    image: postgres:15.6                                # match source major version exactly
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: <APP_DB_NAME>
+      POSTGRES_USER: <APP_DB_USER>
+      POSTGRES_PASSWORD: <APP_DB_PASSWORD>             # rotate after migration
+      # Optional: tune for the project's RAM budget
+      # POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - /files/<APP_SHORT>/postgres-dumps:/dumps       # for pg_dump / pg_restore traffic
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U <APP_DB_USER> -d <APP_DB_NAME>"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  app:
+    image: <APP_IMAGE>:<APP_TAG>                       # use Mittwald Project Registry path for private images (Pitfall #14)
+    restart: unless-stopped
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    environment:
+      # In-stack hostnames (Pitfall #16):
+      DATABASE_URL: "postgres://<APP_DB_USER>:<APP_DB_PASSWORD>@postgresql:5432/<APP_DB_NAME>"
+      # Rewrite map from Discovery goes here; one entry per env the source used.
+      APP_ENV: production
+      # SECRET_KEY_BASE: <SECRET>                      # use Mittwald secrets, don't inline
+    volumes:
+      - /files/<APP_SHORT>/uploads:/app/uploads
+    # The first virtualhost terminates TLS at Mittwald edge and proxies to this container.
+    # Inside-the-stack port; not published to the host.
+    expose:
+      - "<APP_LISTEN_PORT>"                            # e.g. 3000, 8080, 80 — match what the app binds
+
+volumes:
+  pgdata: {}

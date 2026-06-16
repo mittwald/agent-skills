@@ -1,0 +1,52 @@
+# Template: app + MySQL (container variant) in a Mittwald stack.
+#
+# Use this when the operator chose container-MySQL over Mittwald-managed MySQL.
+# If they chose managed MySQL, drop the `mysql` service entirely and point the app
+# at the host returned by mcp__mittwald__mittwald_database_mysql_get.
+#
+# Conventions match postgres-app.yml; see that file for the rationale.
+
+services:
+
+  mysql:
+    image: mysql:8.0                                   # or mariadb:10.11 — match source
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: <APP_DB_NAME>
+      MYSQL_USER: <APP_DB_USER>
+      MYSQL_PASSWORD: <APP_DB_PASSWORD>
+      MYSQL_ROOT_PASSWORD: <ROOT_PASSWORD>            # used for the initial drop+recreate dance
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password  # if app uses old client
+    volumes:
+      - mysqldata:/var/lib/mysql
+      - /files/<APP_SHORT>/mysql-dumps:/dumps          # bind-mount for dump transfer (Pitfall #4)
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  app:
+    image: <APP_IMAGE>:<APP_TAG>
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      # In-stack hostname is the service name (Pitfall #16):
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_NAME: <APP_DB_NAME>
+      DB_USER: <APP_DB_USER>
+      DB_PASSWORD: <APP_DB_PASSWORD>
+      APP_ENV: production
+    volumes:
+      - /files/<APP_SHORT>/uploads:/app/uploads
+    expose:
+      - "<APP_LISTEN_PORT>"
+
+volumes:
+  mysqldata: {}

@@ -1,0 +1,30 @@
+# Optional add-on: Adminer for ad-hoc DB inspection during migration.
+#
+# Append this `adminer` service block into postgres-app.yml or mysql-app.yml
+# (same `services:` map). Do NOT expose Adminer publicly in production —
+# protect the virtualhost with HTTP Basic Auth or limit access to your IP.
+#
+# Use a second virtualhost on a dedicated hostname (e.g. db.<shortId>.project.space
+# or db.example.com), routed to this container on port 8080.
+
+services:
+
+  adminer:
+    image: adminer:4-standalone
+    restart: unless-stopped
+    environment:
+      ADMINER_DESIGN: nette
+      # Optional: lock to a default server so the operator doesn't have to type it
+      ADMINER_DEFAULT_SERVER: postgresql                # or `mysql`, depending on which DB lives in the stack
+    expose:
+      - "8080"
+
+# Then create a second virtualhost via mcp__mittwald__mittwald_domain_virtualhost_create:
+#
+#   projectId: <uuid>
+#   hostname: db.<shortId>.project.space               # or a custom hostname
+#   paths:
+#     "/": { container: { name: "adminer", port: 8080 } }
+#
+# After migration, remove this block from the stack and delete the virtualhost.
+# Don't leave Adminer reachable long-term.
