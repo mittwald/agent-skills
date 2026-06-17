@@ -1,0 +1,12 @@
+{
+  "name": "mittwald-skills",
+  "description": "Collection of mittwald skills for the Claude plugin system.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Mittwald CM Service GmbH & Co. KG",
+    "url": "https://www.mittwald.de"
+  },
+  "homepage": "https://github.com/mittwald/mittwald-skills",
+  "repository": "https://github.com/mittwald/mittwald-skills",
+  "license": "MIT"
+}

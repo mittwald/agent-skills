@@ -62,16 +62,11 @@ mkdir -p ~/.claude/skills
 git clone https://github.com/mittwald/mittwald-skills.git ~/.claude/skills/mittwald-skills
 ```
 
-Then symlink the individual skills:
+or install via plugin marketplace:
 
 ```bash
-# VS Code Copilot (personal)
-ln -s ~/.agents/skills/mittwald-skills/skills/mittwald-migrate ~/.agents/skills/mittwald-migrate
-ln -s ~/.agents/skills/mittwald-skills/skills/mittwald-zerodeploy-skill ~/.agents/skills/mittwald-zerodeploy-skill
-
-# Claude Code
-ln -s ~/.claude/skills/mittwald-skills/skills/mittwald-migrate ~/.claude/skills/mittwald-migrate
-ln -s ~/.claude/skills/mittwald-skills/skills/mittwald-zerodeploy-skill ~/.claude/skills/mittwald-zerodeploy-skill
+/plugin marketplace add mittwald/mittwald-skills
+/plugin install mittwald-migrate@mittwald-skills
 ```
 
 **For other AI assistants**:
