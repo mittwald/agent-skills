@@ -48,25 +48,25 @@ Before using either skill:
 ```bash
 # Personal skills (recommended)
 mkdir -p ~/.agents/skills
-git clone https://github.com/mittwald/mittwald-skills.git ~/.agents/skills/mittwald-skills
+git clone https://github.com/mittwald/agent-skills.git ~/.agents/skills/mittwald-skills
 
 # Project-local skills
 mkdir -p .agents/skills
-git clone https://github.com/mittwald/mittwald-skills.git .agents/skills/mittwald-skills
+git clone https://github.com/mittwald/agent-skills.git .agents/skills/mittwald-skills
 ```
 
 **For Claude Code**:
 ```bash
 # Clone to your Claude skills directory
 mkdir -p ~/.claude/skills
-git clone https://github.com/mittwald/mittwald-skills.git ~/.claude/skills/mittwald-skills
+git clone https://github.com/mittwald/agent-skills.git ~/.claude/skills/mittwald-skills
 ```
 
 or install via plugin marketplace:
 
 ```bash
-/plugin marketplace add mittwald/mittwald-skills
-/plugin install mittwald-migrate@mittwald-skills
+/plugin marketplace add mittwald/agent-skills
+/plugin install mittwald-migrate@agent-skills
 ```
 
 **For other AI assistants**:
@@ -133,7 +133,7 @@ Details: [`skills/mittwald-migrate/references/ssh-modes.md`](skills/mittwald-mig
 ## Skill Structure
 
 ```
-mittwald-skills/
+agent-skills/
 ├── skills/
 │   ├── mittwald-migrate/          # Migration skill
 │   │   ├── SKILL.md               # Workflow index
@@ -271,7 +271,7 @@ See [DEVELOPING.md](DEVELOPING.md) for:
 
 ### Support
 - **mittwald Support**: Ticket system at https://studio.mittwald.de (login required)
-- **GitHub Issues**: [Report skill issues here](https://github.com/mittwald/mittwald-skills/issues)
+- **GitHub Issues**: [Report skill issues here](https://github.com/mittwald/agent-skills/issues)
 
 ---
 
