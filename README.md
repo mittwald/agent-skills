@@ -1,4 +1,4 @@
-# mittwald-skills
+# agent-skills
 
 **AI agent skills for mittwald mStudio** - Conversational guidance for migrations and zero-config deployments.
 
