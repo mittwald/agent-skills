@@ -1,6 +1,6 @@
 # AGENTS.md
 
-**OpenAI Codex / agent instruction shim for mittwald-skills**
+**OpenAI Codex / agent instruction shim for agent-skills**
 
 This file provides agent instructions for OpenAI Codex and other AI assistants that load instructions from `AGENTS.md` rather than skill directories.
 

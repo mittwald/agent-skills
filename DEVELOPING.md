@@ -1,6 +1,6 @@
 # DEVELOPING.md
 
-**Contribution guidelines for mittwald-skills repository**
+**Contribution guidelines for agent-skills repository**
 
 This document explains how to work on the skills themselves — structure, conventions, testing, and contribution workflow.
 
@@ -9,7 +9,7 @@ This document explains how to work on the skills themselves — structure, conve
 ## Repository Structure
 
 ```
-mittwald-skills/
+agent-skills/
 ├── skills/                     # Individual skill directories
 │   ├── mittwald-migrate/       # Migration skill
 │   │   ├── SKILL.md            # Main entry point (< 200 lines)
@@ -257,13 +257,13 @@ Skills don't have explicit version numbers. Instead:
 
 Users who need stability can:
 ```bash
-git clone --branch v1.0.0 https://github.com/mittwald/mittwald-skills.git
+git clone --branch v1.0.0 https://github.com/mittwald/agent-skills.git
 ```
 
 Or pin to a commit:
 ```bash
-git clone https://github.com/mittwald/mittwald-skills.git
-cd mittwald-skills
+git clone https://github.com/mittwald/agent-skills.git
+cd agent-skills
 git checkout <commit-hash>
 ```
 

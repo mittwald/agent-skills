@@ -1,6 +1,6 @@
-# Contributing to mittwald-skills
+# Contributing to agent-skills
 
-Thank you for your interest in contributing to mittwald-skills! 🎉
+Thank you for your interest in contributing to agent-skills! 🎉
 
 ## Getting Started
 
@@ -16,8 +16,8 @@ Please read [DEVELOPING.md](DEVELOPING.md) for comprehensive guidelines on:
 
 ## Quick Links
 
-- **Bug Reports & Feature Requests**: [GitHub Issues](https://github.com/mittwald/mittwald-skills/issues)
-- **Questions & Discussions**: [GitHub Discussions](https://github.com/mittwald/mittwald-skills/discussions)
+- **Bug Reports & Feature Requests**: [GitHub Issues](https://github.com/mittwald/agent-skills/issues)
+- **Questions & Discussions**: [GitHub Discussions](https://github.com/mittwald/agent-skills/discussions)
 - **Developer Guide**: [DEVELOPING.md](DEVELOPING.md)
 - **User Documentation**: [README.md](README.md)
 
