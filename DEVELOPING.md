@@ -172,6 +172,39 @@ Each should be able to load and execute the skills without modification.
 
 ---
 
+## Continuous Integration
+
+Because this repository is pure markdown, CI focuses on content integrity rather
+than builds or unit tests. Three checks run on every pull request (see
+`.github/workflows/ci.yml`):
+
+1. **Markdown lint** — `markdownlint-cli2` enforces consistent, clean-rendering
+   markdown. Rules are configured in `.markdownlint-cli2.jsonc`.
+2. **Internal link check** — `lychee --offline` verifies that every relative link
+   (playbook → reference, README → skill, etc.) points to a file that exists.
+3. **SKILL.md validation** — `scripts/validate-skills.sh` checks that each
+   `skills/*/SKILL.md` has valid frontmatter, that its `name:` matches the
+   directory, and that it stays under 200 lines.
+
+External URLs are **not** checked on PRs (third-party hosts go down or rate-limit,
+which would cause flaky failures). Instead, `.github/workflows/external-links.yml`
+checks them on a weekly schedule and opens a tracking issue if any are broken.
+
+### Running the checks locally
+
+```bash
+# Markdown lint
+npx markdownlint-cli2 "**/*.md"
+
+# Internal links (requires lychee: https://github.com/lycheeverse/lychee)
+lychee --offline --no-progress .
+
+# SKILL.md conventions
+bash scripts/validate-skills.sh
+```
+
+---
+
 ## Code Review Checklist
 
 Before submitting a PR:

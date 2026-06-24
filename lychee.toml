@@ -1,0 +1,32 @@
+# Configuration for lychee (https://github.com/lycheeverse/lychee).
+#
+# Used by both CI workflows:
+#   - ci.yml runs with --offline, validating only local/relative links.
+#   - external-links.yml runs online (this config governs that run).
+
+# Be patient and resilient with flaky external hosts.
+max_retries = 3
+retry_wait_time = 2
+timeout = 20
+max_concurrency = 8
+
+# Treat these as success in addition to 2xx: 206 (partial) and 429 (rate-limited
+# but reachable). 999 is returned by some hosts (e.g. LinkedIn) for bots.
+accept = ["200", "206", "429", "999"]
+
+# Identify as a normal browser; some hosts reject the default user agent.
+user_agent = "Mozilla/5.0 (compatible; lychee link checker)"
+
+# Don't try to verify mailto: links.
+include_mail = false
+
+# URLs that require authentication or are otherwise not meaningfully checkable
+# by an anonymous CI runner. These are intentionally excluded, not broken.
+exclude = [
+  # Login-walled mStudio web app pages.
+  "^https://studio\\.mittwald\\.de",
+  # API endpoints that require a Bearer token (return 401 anonymously).
+  "^https://api\\.mittwald\\.de",
+  # Example/placeholder hosts used in playbooks.
+  "example\\.com",
+]

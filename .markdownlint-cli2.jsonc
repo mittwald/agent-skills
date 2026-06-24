@@ -1,0 +1,40 @@
+{
+  // Markdown lint rules for this docs-only repository.
+  // Goal: catch real rendering/structure problems without forcing a mass reformat
+  // of the existing prose. Tune as content evolves.
+  "config": {
+    "default": true,
+
+    // Prose in this repo uses long lines intentionally (skill descriptions,
+    // tables, URLs). Line length is not a useful signal here.
+    "MD013": false,
+
+    // Bold-as-label is used deliberately, e.g. "**For Claude Code**:".
+    "MD036": false,
+
+    // Allow inline HTML (rare, but harmless in rendered docs).
+    "MD033": false,
+
+    // Duplicate headings are fine across different sections (e.g. "Triggers",
+    // "Context" recur in playbooks); only flag duplicates among siblings.
+    "MD024": { "siblings_only": true },
+
+    // First line need not be a heading: SKILL.md files open with YAML frontmatter.
+    "MD041": false,
+
+    // Table pipe spacing is purely cosmetic and renders identically on GitHub.
+    "MD060": false,
+
+    // Many code blocks are illustrative output without a meaningful language;
+    // requiring a language tag here is noise rather than signal.
+    "MD040": false,
+
+    // Bare URLs are fine and readable in these docs; do not force <…> autolinks.
+    "MD034": false
+  },
+  "globs": ["**/*.md"],
+  "ignores": [
+    ".git",
+    "node_modules"
+  ]
+}
