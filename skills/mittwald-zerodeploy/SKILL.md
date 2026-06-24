@@ -3,7 +3,7 @@ name: mittwald-zerodeploy
 description: Guides a conversational, phase-by-phase deployment of an arbitrary application to Mittwald mStudio. Use when the user mentions "deploy to Mittwald", "move to mStudio", "Container Hosting auf Mittwald", "stack_deploy", or asks for help deploying a workload (K8s, Docker Compose, VPS, another hoster, another mStudio project) onto Mittwald. Source is open, target is always mStudio.
 ---
 
-# mittwald-zerodeploy-skill
+# mittwald-zerodeploy
 
 Zero-config deployment to mittwald mStudio container hosting using Railpack build inference.
 

@@ -15,7 +15,7 @@ agent-skills/
 │   │   ├── SKILL.md            # Main entry point (< 200 lines)
 │   │   ├── playbooks/          # Step-by-step executable guides
 │   │   └── references/         # Background knowledge docs
-│   └── mittwald-zerodeploy-skill/  # Deployment skill
+│   └── mittwald-zerodeploy/  # Deployment skill
 │       ├── SKILL.md
 │       ├── playbooks/
 │       └── references/
@@ -141,7 +141,7 @@ agent-skills/
    ```bash
    mkdir -p ~/.agents/skills
    ln -s $(pwd)/skills/mittwald-migrate ~/.agents/skills/mittwald-migrate
-   ln -s $(pwd)/skills/mittwald-zerodeploy-skill ~/.agents/skills/mittwald-zerodeploy-skill
+   ln -s $(pwd)/skills/mittwald-zerodeploy ~/.agents/skills/mittwald-zerodeploy
    ```
 
 2. **Restart your AI assistant** (VS Code, Claude Code, etc.)

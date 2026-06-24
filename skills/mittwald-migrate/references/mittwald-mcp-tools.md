@@ -169,7 +169,7 @@ Re-check this assumption when MCP's tool list changes. See [`app-catalog.md`](ap
 
 | Tool | Purpose |
 |---|---|
-| `context_get_session` / `_set_session` / `_reset_session` | Session-scoped defaults | **Don't rely on these** — Pitfall #2. Always pass IDs explicitly. |
+| `context_get_session` / `_set_session` / `_reset_session` | Session-scoped defaults. **Don't rely on these** — Pitfall #2. Always pass IDs explicitly. |
 
 ## Auth
 

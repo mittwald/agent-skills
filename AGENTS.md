@@ -11,7 +11,7 @@ This file provides agent instructions for OpenAI Codex and other AI assistants t
 This repository contains two skills for working with mittwald mStudio:
 
 1. **mittwald-migrate** - Phase-by-phase migration workflows
-2. **mittwald-zerodeploy-skill** - Zero-config deployment with Railpack
+2. **mittwald-zerodeploy** - Zero-config deployment with Railpack
 
 ---
 
@@ -56,7 +56,7 @@ This repository contains two skills for working with mittwald mStudio:
 
 ---
 
-## mittwald-zerodeploy-skill
+## mittwald-zerodeploy
 
 **Purpose**: Zero-config deployment to mStudio container hosting using Railpack.
 
@@ -72,9 +72,9 @@ This repository contains two skills for working with mittwald mStudio:
 
 **When activated**:
 
-1. Load `skills/mittwald-zerodeploy-skill/SKILL.md` to understand the workflow
-2. Follow numbered playbooks in `skills/mittwald-zerodeploy-skill/playbooks/`
-3. Reference `skills/mittwald-zerodeploy-skill/references/` for troubleshooting
+1. Load `skills/mittwald-zerodeploy/SKILL.md` to understand the workflow
+2. Follow numbered playbooks in `skills/mittwald-zerodeploy/playbooks/`
+3. Reference `skills/mittwald-zerodeploy/references/` for troubleshooting
 4. Avoid the 3 critical gotchas (Dockerfiles, ports, exotic projects)
 
 **Key playbooks**:
@@ -142,15 +142,15 @@ When a skill is triggered:
 All playbook and reference paths are relative to the skill directory:
 
 - `skills/mittwald-migrate/playbooks/migrate-mysql.md`
-- `skills/mittwald-zerodeploy-skill/references/pitfalls.md`
+- `skills/mittwald-zerodeploy/references/pitfalls.md`
 
 If this `AGENTS.md` is at the project root, and skills are in `skills/`, use relative paths:
 
 ```
 ./skills/mittwald-migrate/SKILL.md
 ./skills/mittwald-migrate/playbooks/discover-source.md
-./skills/mittwald-zerodeploy-skill/SKILL.md
-./skills/mittwald-zerodeploy-skill/playbooks/01-provision-target.md
+./skills/mittwald-zerodeploy/SKILL.md
+./skills/mittwald-zerodeploy/playbooks/01-provision-target.md
 ```
 
 If the skills directory is elsewhere, adjust paths accordingly.
@@ -184,7 +184,7 @@ Common issues:
 Full troubleshooting:
 
 - Migrate: `skills/mittwald-migrate/references/pitfalls.md`
-- Deploy: `skills/mittwald-zerodeploy-skill/references/pitfalls.md`
+- Deploy: `skills/mittwald-zerodeploy/references/pitfalls.md`
 
 ---
 
