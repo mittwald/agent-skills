@@ -5,7 +5,7 @@
 This repository contains two skills for working with mittwald mStudio:
 
 1. **mittwald-migrate** - Phase-by-phase migration of workloads to mStudio
-2. **mittwald-zerodeploy-skill** - Zero-config deployment using Railpack
+2. **mittwald-zerodeploy** - Zero-config deployment using Railpack
 
 ---
 
@@ -21,7 +21,7 @@ Guides conversational, phase-by-phase migration of arbitrary workloads **to mitt
 
 **Location**: [`skills/mittwald-migrate/`](skills/mittwald-migrate/)
 
-### mittwald-zerodeploy-skill
+### mittwald-zerodeploy
 
 Zero-config deployment to mStudio container hosting using Railpack auto-detection. No Dockerfile needed.
 
@@ -29,7 +29,7 @@ Zero-config deployment to mStudio container hosting using Railpack auto-detectio
 
 **Triggers**: "deploy to mittwald", "help me deploy", "set up mittwald deployment"
 
-**Location**: [`skills/mittwald-zerodeploy-skill/`](skills/mittwald-zerodeploy-skill/)
+**Location**: [`skills/mittwald-zerodeploy/`](skills/mittwald-zerodeploy/)
 
 ---
 
@@ -157,7 +157,7 @@ agent-skills/
 │   │       ├── stateful-container-restore.md
 │   │       └── compose-templates/
 │   │
-│   └── mittwald-zerodeploy-skill/  # Deployment skill
+│   └── mittwald-zerodeploy/        # Deployment skill
 │       ├── SKILL.md                # Workflow index
 │       ├── playbooks/              # Step-by-step guides
 │       │   ├── 01-provision-target.md
@@ -198,7 +198,7 @@ agent-skills/
 ### Skill-Specific Troubleshooting
 
 - **mittwald-migrate**: See [`skills/mittwald-migrate/references/pitfalls.md`](skills/mittwald-migrate/references/pitfalls.md) for 25+ migration-specific issues
-- **mittwald-zerodeploy-skill**: See [`skills/mittwald-zerodeploy-skill/references/pitfalls.md`](skills/mittwald-zerodeploy-skill/references/pitfalls.md) for the 3 critical deployment gotchas
+- **mittwald-zerodeploy**: See [`skills/mittwald-zerodeploy/references/pitfalls.md`](skills/mittwald-zerodeploy/references/pitfalls.md) for the 3 critical deployment gotchas
 
 ---
 
@@ -222,7 +222,7 @@ agent-skills/
 
 **User**: "Help me deploy my Express app to mittwald"
 
-**AI Assistant** (using mittwald-zerodeploy-skill):
+**AI Assistant** (using mittwald-zerodeploy):
 1. Verifies mStudio setup
 2. Tests deployment locally with `mw experimental deploy`
 3. Sets up GitHub Actions workflow
