@@ -11,6 +11,7 @@ This document expands on the **3 most common gotchas** that cause deployment fai
 **When a Dockerfile exists in the project root, Railpack is completely bypassed.** The CLI and GitHub Action will use the Dockerfile directly, and if it's broken, the deployment will fail.
 
 **Why is this a problem?**
+
 - AI coding agents often generate Dockerfiles that look plausible but contain subtle errors
 - Copy-pasted Dockerfiles may use wrong base images or incompatible commands
 - Dockerfile may be outdated or incompatible with current codebase
@@ -19,11 +20,13 @@ This document expands on the **3 most common gotchas** that cause deployment fai
 ### Detection
 
 Check for Dockerfile presence:
+
 ```bash
 ls -la Dockerfile docker-compose.yml .dockerignore
 ```
 
 **Warning signs**:
+
 - Build fails with Docker-specific errors
 - Error messages reference Dockerfile lines
 - Build works on some machines but not others
@@ -32,6 +35,7 @@ ls -la Dockerfile docker-compose.yml .dockerignore
 ### Why This Happens
 
 Developers (or AI assistants) create a Dockerfile thinking it will help, but:
+
 - They don't fully understand Docker internals
 - Base image choice is wrong for the framework
 - Build commands don't match project structure
@@ -52,6 +56,7 @@ git push
 ```
 
 Then retry deployment:
+
 ```bash
 mw experimental deploy --wait --project-id p-xxxxxx
 ```
@@ -67,6 +72,7 @@ mw experimental deploy --wait --project-id p-xxxxxx
 ### When NOT to Delete the Dockerfile
 
 Keep the Dockerfile if:
+
 - ✅ It's maintained by a DevOps team and tested
 - ✅ It's part of a production-grade setup
 - ✅ The project requires system dependencies not available in buildpacks
@@ -85,6 +91,7 @@ In these cases, you're outside the "zerodeploy" use case and should use `deploy-
 ### The Problem
 
 **Apps may listen on ports that don't match the default expectations**, and the port might be hardcoded in obscure places:
+
 - Config files deep in the project
 - Environment variables not documented
 - Framework defaults that differ from convention
@@ -95,12 +102,14 @@ In these cases, you're outside the "zerodeploy" use case and should use `deploy-
 ### Detection
 
 **Symptom checklist**:
+
 - ✅ Deployment completed successfully
 - ✅ Container status is "Running" in mStudio
 - ❌ Deployment URL returns 502 Bad Gateway or timeout
 - ❌ App not responding on expected URL
 
 **Check the logs** in mStudio:
+
 1. Navigate to: Container → Logs
 2. Look for startup messages like:
    - `Listening on port 4200`
@@ -150,12 +159,14 @@ In these cases, you're outside the "zerodeploy" use case and should use `deploy-
 Most frameworks support `PORT` env var:
 
 **Node.js/Express**:
+
 ```javascript
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Server on port ${port}`));
 ```
 
 **Python/Flask**:
+
 ```python
 import os
 port = int(os.environ.get('PORT', 5000))
@@ -163,6 +174,7 @@ app.run(host='0.0.0.0', port=port)
 ```
 
 **Python/Django** (in settings.py):
+
 ```python
 # Use PORT env var if available
 import os
@@ -184,6 +196,7 @@ If the app uses **multiple ports** (e.g., HTTP + WebSocket + gRPC), this is beyo
 **Railpack has limits.** It's designed for standard web applications with conventional structures. Complex or unusual projects may not work with auto-detection.
 
 **What qualifies as "exotic"?**
+
 - ✅ Monorepos with multiple services
 - ✅ Custom build toolchains (Bazel, Buck, etc.)
 - ✅ Multi-language projects (e.g., Python backend + Node.js frontend in one repo)
@@ -194,6 +207,7 @@ If the app uses **multiple ports** (e.g., HTTP + WebSocket + gRPC), this is beyo
 ### Detection
 
 **Error patterns**:
+
 ```
 Could not detect project type
 No buildpack found for this project
@@ -202,6 +216,7 @@ Unsupported dependency: <some exotic tool>
 ```
 
 **Behavioral signs**:
+
 - Railpack can't determine language/framework
 - Build starts but fails on missing tools
 - Dependencies install but compilation fails
@@ -210,6 +225,7 @@ Unsupported dependency: <some exotic tool>
 ### Why This Happens
 
 Railpack relies on:
+
 - **Conventional project structures** (e.g., `package.json` at root)
 - **Standard build tools** (npm, pip, composer, etc.)
 - **Well-known frameworks** (Express, Flask, Laravel, etc.)
@@ -223,6 +239,7 @@ When projects deviate from conventions, auto-detection breaks down.
 **After 2-3 failed deployment attempts**, it's time to hand off to a DevOps engineer or mittwald support.
 
 **What to do**:
+
 1. ✅ Document the exact error messages
 2. ✅ Provide an overview of the project structure
 3. ✅ List any unusual dependencies or build requirements
@@ -230,6 +247,7 @@ When projects deviate from conventions, auto-detection breaks down.
 5. ✅ Contact mittwald support via ticket system or support area at https://studio.mittwald.de (login required)
 
 **What NOT to do**:
+
 - ❌ Attempt to write a custom Dockerfile from scratch (without Docker knowledge)
 - ❌ Deep-dive into Railpack or buildpack internals
 - ❌ Try 10 different variations of the same deployment
@@ -247,12 +265,14 @@ When projects deviate from conventions, auto-detection breaks down.
 **Evaluate project complexity before starting**:
 
 **Good candidates for zerodeploy**:
+
 - ✅ Standard web apps (Node.js, Python, PHP, Ruby)
 - ✅ Single service per repository
 - ✅ Conventional project structure
 - ✅ Standard dependency management
 
 **Bad candidates for zerodeploy**:
+
 - ❌ Monorepos with multiple services
 - ❌ Custom build toolchains
 - ❌ Multi-language projects

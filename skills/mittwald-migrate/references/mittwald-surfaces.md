@@ -13,23 +13,29 @@ If **none** of the three are available, stop and tell the operator. Don't invent
 ## Detection
 
 ### MCP
+
 Check whether any tool with the prefix `mcp__mittwald__mittwald_` is reachable. If not, MCP is not connected to this session — the operator must connect it; this skill cannot install it.
 
 ### CLI
+
 ```bash
 command -v mw && mw --version
 ```
+
 Install paths: `brew install mw` (after `brew tap mittwald/cli`), `npm i -g @mittwald/cli`, or the `mittwald/cli` Docker image. Docs: <https://developer.mittwald.de/cli>.
 
 Logged-in?
+
 ```bash
 mw user get -o json    # 401 → not logged in. Equivalent API call: GET /v2/users/self
 ```
 
 ### API
+
 ```bash
 curl -sS https://api.mittwald.de/v2/openapi.json | head -1
 ```
+
 Reachability ≠ usability. The skill still needs an `MITTWALD_API_TOKEN` to do anything authenticated.
 
 ## Authentication

@@ -20,6 +20,7 @@ This repository contains two skills for working with mittwald mStudio:
 **Purpose**: Guide conversational, phase-by-phase migration of arbitrary workloads to mittwald mStudio.
 
 **Triggers**:
+
 - "migrate to Mittwald"
 - "Umzug nach Mittwald"
 - "move to mStudio"
@@ -29,12 +30,14 @@ This repository contains two skills for working with mittwald mStudio:
 **Workflow**: Discovery → Plan → Provision → Migrate → Verify → Cutover
 
 **When activated**:
+
 1. Load `skills/mittwald-migrate/SKILL.md` to understand the workflow
 2. Follow playbooks in `skills/mittwald-migrate/playbooks/` phase by phase
 3. Reference `skills/mittwald-migrate/references/` for background knowledge
 4. Confirm with user before any destructive action
 
 **Key playbooks**:
+
 - `playbooks/discover-source.md` - Map source environment
 - `playbooks/provision-target.md` - Create mStudio project/app/database
 - `playbooks/migrate-files.md` - Transfer files via rsync/scp
@@ -44,6 +47,7 @@ This repository contains two skills for working with mittwald mStudio:
 - `playbooks/rollback.md` - Revert if needed
 
 **Key references**:
+
 - `references/mittwald-surfaces.md` - How to talk to mStudio (MCP/CLI/API)
 - `references/ssh-modes.md` - SSH access patterns
 - `references/pitfalls.md` - 25+ known migration traps
@@ -57,6 +61,7 @@ This repository contains two skills for working with mittwald mStudio:
 **Purpose**: Zero-config deployment to mStudio container hosting using Railpack.
 
 **Triggers**:
+
 - "deploy to mittwald"
 - "help me deploy"
 - "set up mittwald deployment"
@@ -66,12 +71,14 @@ This repository contains two skills for working with mittwald mStudio:
 **Workflow**: Provision → Local CLI Deploy → GitHub Actions → Verify
 
 **When activated**:
+
 1. Load `skills/mittwald-zerodeploy-skill/SKILL.md` to understand the workflow
 2. Follow numbered playbooks in `skills/mittwald-zerodeploy-skill/playbooks/`
 3. Reference `skills/mittwald-zerodeploy-skill/references/` for troubleshooting
 4. Avoid the 3 critical gotchas (Dockerfiles, ports, exotic projects)
 
 **Key playbooks**:
+
 - `playbooks/01-provision-target.md` - Verify mStudio setup
 - `playbooks/02-cli-deploy-local.md` - Test with `mw experimental deploy`
 - `playbooks/03-setup-github-action.md` - Automated CI/CD
@@ -79,6 +86,7 @@ This repository contains two skills for working with mittwald mStudio:
 - `playbooks/05-verify.md` - Post-deployment checks
 
 **Key references**:
+
 - `references/pitfalls.md` - 3 critical deployment gotchas
 - `references/railpack-overview.md` - How Railpack auto-detection works
 - `references/port-configuration.md` - Fix port mismatches
@@ -92,17 +100,20 @@ This repository contains two skills for working with mittwald mStudio:
 All skills require **at least one** way to communicate with mittwald mStudio:
 
 ### Option 1: MCP Server
+
 - Best if Codex session has mittwald MCP server connected
 - Skills call `mcp__mittwald__mittwald_*` tools directly
 - Token stored in MCP config
 
 ### Option 2: `mw` CLI
+
 - Best for terminal workflows
 - Install: `brew tap mittwald/cli && brew install mw` or `npm install -g @mittwald/cli`
 - Authenticate: `mw login token`
 - Token stored at `~/.config/mw/token`
 
 ### Option 3: HTTP API
+
 - Best for scripts
 - Set: `export MITTWALD_API_TOKEN=<token>`
 - Or use `example.env` template in this repo
@@ -171,6 +182,7 @@ Common issues:
 - **502 after deployment**: Port mismatch, check logs and reconfigure ingress
 
 Full troubleshooting:
+
 - Migrate: `skills/mittwald-migrate/references/pitfalls.md`
 - Deploy: `skills/mittwald-zerodeploy-skill/references/pitfalls.md`
 

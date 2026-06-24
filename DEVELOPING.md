@@ -43,6 +43,7 @@ agent-skills/
 - **Purpose**: Workflow index and trigger matcher
 - **Length**: < 200 lines
 - **Structure**:
+
   ```markdown
   # Skill Name
   
@@ -67,6 +68,7 @@ agent-skills/
 - **Naming**: Descriptive, action-oriented (e.g., `migrate-mysql.md`, `cutover-dns.md`)
 - **For zerodeploy**: Number-prefixed for sequence (e.g., `01-provision-target.md`)
 - **Structure**:
+
   ```markdown
   # Playbook Title
   
@@ -135,6 +137,7 @@ agent-skills/
 ### Manual Testing
 
 1. **Install locally**:
+
    ```bash
    mkdir -p ~/.agents/skills
    ln -s $(pwd)/skills/mittwald-migrate ~/.agents/skills/mittwald-migrate
@@ -160,6 +163,7 @@ agent-skills/
 ### Testing with Different AI Assistants
 
 Test with multiple assistants to ensure compatibility:
+
 - VS Code Copilot
 - Claude Code
 - OpenAI Codex (via AGENTS.md)
@@ -194,14 +198,17 @@ Before submitting a PR:
 - **Error handling**: What to do when things go wrong
 
 **Good**:
+
 ```markdown
 1. Create the project:
    ```bash
    mw project create --name "my-project"
    ```
+
    Expected output: `Project created: p-abc123`
 
-2. If you see "Permission denied", verify your token has api_write scope.
+1. If you see "Permission denied", verify your token has api_write scope.
+
 ```
 
 **Bad**:
@@ -256,11 +263,13 @@ Skills don't have explicit version numbers. Instead:
 - **Latest master** is the default
 
 Users who need stability can:
+
 ```bash
 git clone --branch v1.0.0 https://github.com/mittwald/agent-skills.git
 ```
 
 Or pin to a commit:
+
 ```bash
 git clone https://github.com/mittwald/agent-skills.git
 cd agent-skills

@@ -9,6 +9,7 @@
 ### 1. Verify mittwald CLI is installed
 
 Ask the user to run:
+
 ```bash
 mw --version
 ```
@@ -22,6 +23,7 @@ mw --version
 ### 2. Check authentication status
 
 Ask the user to run:
+
 ```bash
 mw context get
 ```
@@ -29,6 +31,7 @@ mw context get
 **Expected output**: Should show current context with API token configured (tokens are masked).
 
 **If no token configured**:
+
 - User needs to obtain API token from mStudio: https://developer.mittwald.de/docs/v2/api/intro/#obtaining-an-api-token
 - Set token via: `mw login --token <TOKEN>`
 
@@ -39,6 +42,7 @@ mw context get
 **Option A: Use default project**
 
 Check if a default project is set:
+
 ```bash
 mw context get
 ```
@@ -48,6 +52,7 @@ Look for a line like `Project: p-xxxxxx (Project Name)`.
 **Option B: Pass project ID explicitly**
 
 Ask the user for their project ID from mStudio:
+
 - In mStudio web UI, navigate to the project
 - Project ID is in the URL: `https://studio.mittwald.de/app/projects/{PROJECT_ID}/...`
 - Format: `p-` followed by 6 characters (e.g., `p-abc123`)
@@ -57,6 +62,7 @@ Ask the user for their project ID from mStudio:
 ### 4. Set default project (optional but recommended)
 
 If the user will deploy to the same project repeatedly:
+
 ```bash
 mw context set --project-id p-xxxxxx
 ```
@@ -68,6 +74,7 @@ This avoids needing to pass `--project-id` on every deployment.
 ## Verification
 
 Before proceeding to deployment, confirm:
+
 - ✅ CLI is installed and responsive
 - ✅ User is authenticated (token configured)
 - ✅ Target project ID is known (either as default or will be passed explicitly)
@@ -77,13 +84,16 @@ Before proceeding to deployment, confirm:
 ## Common Issues
 
 ### "Command not found: mw"
+
 - CLI not installed → install from https://developer.mittwald.de/docs/v2/cli/
 
 ### "Unauthorized" or "Invalid token"
+
 - Token expired or not configured
 - User needs to obtain new token from mStudio and run `mw login --token <TOKEN>`
 
 ### "Project not found"
+
 - Wrong project ID
 - User doesn't have access to the project (check mStudio permissions)
 
@@ -102,6 +112,7 @@ Once verification passes, proceed to **02-cli-deploy-local.md** to test deployme
 ## Prerequisites Check
 
 Before deploying, confirm the user has:
+
 - Active mittwald mStudio account
 - At least one project in mStudio
 - API token generated from mStudio
@@ -120,6 +131,7 @@ mw --version
 **Expected output**: Version number (e.g., `2.x.x`)
 
 **If not installed**: Direct user to install via:
+
 ```bash
 npm install -g @mittwald/cli
 # or
@@ -139,10 +151,12 @@ mw context
 **Expected output**: Should show configured API token (partially masked)
 
 **If no token is set**: Guide user to:
+
 1. Log in to mStudio (https://studio.mittwald.de)
 2. Navigate to **Profile** → **API Tokens**
 3. Create a new token with "Container Management" permissions
 4. Set the token via CLI:
+
    ```bash
    mw context set --api-token YOUR_TOKEN_HERE
    ```
@@ -159,9 +173,10 @@ mw context
 
 **Look for**: `projectId` field in the output
 
-### If project ID is NOT set:
+### If project ID is NOT set
 
 List available projects:
+
 ```bash
 mw project list
 ```
@@ -169,11 +184,13 @@ mw project list
 **Have the user choose** the target project from the list.
 
 ### Option A: Set project in context (persistent)
+
 ```bash
 mw context set --project-id p-XXXXXX
 ```
 
 ### Option B: Pass project ID per deployment (explicit)
+
 Store the project ID to use later with `--project-id` flag in deploy commands.
 
 ---
@@ -204,6 +221,7 @@ ls -la
 ```
 
 **Verify presence of**:
+
 - Application source code
 - Build configuration files (package.json, requirements.txt, composer.json, etc.)
 - **NO faulty Dockerfile** (if present, flag for review in next playbook)
@@ -225,14 +243,17 @@ Before proceeding to deployment, confirm:
 ## Common Issues
 
 ### Issue: "Authentication failed"
+
 **Cause**: Token expired or invalid  
 **Solution**: Generate a new API token in mStudio and update context
 
 ### Issue: "Project not found"
+
 **Cause**: Wrong project ID or insufficient permissions  
 **Solution**: Verify project ID with `mw project list` and check token permissions
 
 ### Issue: "CLI command not found"
+
 **Cause**: CLI not in PATH or not installed  
 **Solution**: Reinstall CLI or check PATH configuration
 

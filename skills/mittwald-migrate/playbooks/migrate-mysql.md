@@ -58,6 +58,7 @@ MYSQL_PWD="$SRC_DB_PW" \
 ```
 
 Notes:
+
 - `gzip -6` matches the trade-off used for Postgres dumps. Drop to `-1` for fastest CPU, `-9` for smallest file.
 - `set -Eeuo pipefail` is mandatory (Pitfall #8).
 

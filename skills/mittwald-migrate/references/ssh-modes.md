@@ -70,6 +70,7 @@ What it is: a shell on the **project host** itself. The home directory is `/home
 Mixing these up ("where are my WordPress files? `/files/` is empty!") is Pitfall #4.
 
 Use it for:
+
 - Landing DB dumps in transit (`ssh … 'cat > /files/myapp/postgres-dumps/dump.pgc'`)
 - Writing file-transfer payloads (`tar … | ssh … 'tar -xf -'`)
 - Inspecting state when a container is **stopped** (Container-SSH won't work — Container-SSH needs a running container)
@@ -77,6 +78,7 @@ Use it for:
 - Running tooling on the host (no, you can't `apt install` arbitrary things — it's a managed environment)
 
 **Doesn't** give you access to:
+
 - Named-volume contents (those live inside the container runtime)
 - The container's runtime user / network namespace
 
@@ -85,6 +87,7 @@ Use it for:
 What it is: a shell **inside** a specific running container. The PID 1 is the container's main process; the filesystem is the container's filesystem (image + volumes); the network is the stack's internal network.
 
 Use it for:
+
 - Running `pg_restore`, `mysql` import, `php artisan migrate`, `rails console`, etc.
 - Quick app-level introspection while debugging
 - `chown -R` after a Project-Host-SSH-initiated file transfer (Pitfall #4 cleanup)

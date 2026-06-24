@@ -28,6 +28,7 @@ Long DNS TTLs (3600s+ is typical) mean stale resolvers point at the old IP for u
 Example: current TTL is 3600s. At T-2h, change TTL to 60s. By T-0 (cutover), all caches have ≤60s of staleness.
 
 Mittwald's own DNS zones:
+
 ```text
 mcp__mittwald__mittwald_domain_dnszone_get
 mcp__mittwald__mittwald_domain_dnszone_update     # if Mittwald is also authoritative for the zone
@@ -77,12 +78,14 @@ The operator changes the records at their authoritative DNS provider. Three comm
 Change A and AAAA records to Mittwald's virtualhost IPs. Done.
 
 Watch propagation:
+
 ```bash
 dig +short A foo.example.com @1.1.1.1
 dig +short A foo.example.com @8.8.8.8
 ```
 
 Mittwald requests Let's Encrypt automatically once the hostname resolves to its IP. Watch:
+
 ```text
 mcp__mittwald__mittwald_domain_virtualhost_get      # check ssl/tls status field
 ```
@@ -102,6 +105,7 @@ Equivalent to Cloudflare — origin is now Mittwald. Update the origin host in t
 ## 6. Post-cutover verification
 
 For the next 30 minutes:
+
 - Hit the **public** hostname from multiple regions / resolvers (`dig` from a few nodes; or use a third-party check).
 - Watch `container_logs` for 4xx/5xx spikes.
 - Watch the application's own error tracker (Sentry / equivalent), if any.
