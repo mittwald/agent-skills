@@ -4,6 +4,48 @@
 
 This file provides agent instructions for OpenAI Codex and other AI assistants that load instructions from `AGENTS.md` rather than skill directories.
 
+There are two ways an agent interacts with this repo:
+
+- **Using the skills** — guiding a migration or deployment. Start at [Skills Available](#skills-available).
+- **Working on the repo** — editing skills, playbooks, references, or docs. Read [Working on This Repository](#working-on-this-repository-quality-gates) first.
+
+---
+
+## Working on This Repository (Quality Gates)
+
+If you are **editing this repository** (not just using the skills), note that it is
+pure markdown and its quality is enforced by CI (`.github/workflows/ci.yml`). The
+same three checks run on every pull request.
+
+**Before creating any commit, run all three locally and make sure they pass.** A
+green local run means a green PR.
+
+```bash
+# 1. Markdown: auto-fix mechanical issues, then verify the result is clean.
+#    Config: .markdownlint-cli2.jsonc
+npx markdownlint-cli2 --fix "**/*.md"   # rewrites files in place
+npx markdownlint-cli2 "**/*.md"         # must report 0 errors
+
+# 2. Internal links resolve. Config: lychee.toml
+#    Needs lychee (https://github.com/lycheeverse/lychee). No local install? Use Docker:
+#    docker run --rm -v "$PWD:/input" -w /input lycheeverse/lychee --offline --no-progress .
+lychee --offline --no-progress .         # must report 0 errors
+
+# 3. SKILL.md conventions: frontmatter present, name matches directory, < 200 lines.
+bash scripts/validate-skills.sh
+```
+
+Rules of thumb:
+
+- **Fix failures before committing** — never commit with a failing gate.
+- **Keep mechanical formatting in its own commit.** When `--fix` reformats files,
+  commit that reformat separately (e.g. `style: apply markdownlint auto-fixes`) from
+  content changes, so the substantive diff stays readable.
+- **External URLs are not checked per-commit** — a weekly workflow
+  (`.github/workflows/external-links.yml`) checks them and opens an issue on failure.
+- Use **conventional commits** (`feat:`, `fix:`, `docs:`, `ci:`, `style:` …). See
+  [DEVELOPING.md](DEVELOPING.md) for the full contributor guide.
+
 ---
 
 ## Skills Available

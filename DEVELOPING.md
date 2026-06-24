@@ -190,18 +190,27 @@ External URLs are **not** checked on PRs (third-party hosts go down or rate-limi
 which would cause flaky failures). Instead, `.github/workflows/external-links.yml`
 checks them on a weekly schedule and opens a tracking issue if any are broken.
 
-### Running the checks locally
+### Running the checks locally (before every commit)
+
+Run these from the repository root and make sure all three pass before committing.
+A green local run means a green PR.
 
 ```bash
-# Markdown lint
-npx markdownlint-cli2 "**/*.md"
+# 1. Markdown: auto-fix mechanical issues, then verify the result is clean.
+npx markdownlint-cli2 --fix "**/*.md"   # rewrites files in place
+npx markdownlint-cli2 "**/*.md"         # must report 0 errors
 
-# Internal links (requires lychee: https://github.com/lycheeverse/lychee)
-lychee --offline --no-progress .
+# 2. Internal links resolve (requires lychee: https://github.com/lycheeverse/lychee,
+#    or run via Docker: docker run --rm -v "$PWD:/input" -w /input lycheeverse/lychee ...)
+lychee --offline --no-progress .         # must report 0 errors
 
-# SKILL.md conventions
+# 3. SKILL.md conventions: frontmatter present, name matches directory, < 200 lines.
 bash scripts/validate-skills.sh
 ```
+
+**Keep mechanical formatting in its own commit.** When `--fix` reformats files,
+commit that reformat separately (e.g. `style: apply markdownlint auto-fixes`) from
+any content changes, so reviewers can read the substantive diff without noise.
 
 ---
 
