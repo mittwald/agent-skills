@@ -3,6 +3,7 @@
 **Goal:** move persistent file data (uploads, media, attachments, generated assets that aren't reproducible) from the source onto the Mittwald target.
 
 **Where the data lands depends on the target type (Pitfall #4):**
+
 - **App** (Managed App / runtime app) → under the **project home**, at the app's `installationPath` — `/home/<p-shortId>/html` by default. Read the exact path from the project's `directories.Web` or the app's `installationPath`.
 - **Container stack** → a **bind-mount under `/files/<app>/...`** as declared in the compose YAML.
 
@@ -39,6 +40,7 @@ tar -C "$(dirname "$SRC_PATH")" -cf - "$(basename "$SRC_PATH")" \
 ```
 
 Notes:
+
 - Uses `tar`'s `-C` to set working directory both ends — preserves the intended top-level dir name.
 - Add `| pv -s "$(du -sb "$SRC_PATH" | awk '{print $1}')" |` between tars for a progress bar (Pitfall #9, optional).
 - Compression usually isn't worth it for already-compressed media (JPEG/MP4). If the data is text-heavy, add `| zstd -3 |` and the inverse on receive — but then plan for double the CPU window.
@@ -67,6 +69,7 @@ rsync -aHv --delete-after --info=progress2 \
 ```
 
 Flag rationale:
+
 - `-a` — archive (preserves perms, symlinks, timestamps).
 - `-H` — hard links preserved (matters for some image libraries).
 - `--delete-after` — make target a mirror, but only after a complete pass. Don't use during the first transfer if the target was pre-seeded with anything important.
@@ -109,6 +112,7 @@ ssh "$TGT_PROJ_SSH" "find '$TGT_PATH' -type f | shuf -n 5 | xargs sha256sum"
 Compare to source-side numbers. File-count parity is the strongest cheap signal.
 
 For tampering-paranoid workloads:
+
 ```bash
 # on source
 find /srv/myapp/uploads -type f -print0 | sort -z \

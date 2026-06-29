@@ -1,0 +1,46 @@
+name: CI
+
+# Content-quality checks for this docs-only repository. Deterministic and fast:
+# no external network calls (external URLs are checked on a schedule, see
+# external-links.yml).
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  markdownlint:
+    name: Markdown lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run markdownlint-cli2
+        uses: DavidAnson/markdownlint-cli2-action@v20
+        with:
+          globs: "**/*.md"
+
+  links-internal:
+    name: Internal links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check relative/local links (offline)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # --offline validates only local file links and skips all HTTP, so this
+          # job is fully deterministic. External URLs are covered by the weekly
+          # external-links workflow.
+          args: "--offline --no-progress ."
+          fail: true
+
+  validate-skills:
+    name: Validate SKILL.md
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enforce SKILL.md conventions
+        run: bash scripts/validate-skills.sh

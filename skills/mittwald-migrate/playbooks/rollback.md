@@ -42,6 +42,7 @@ This is the high-stakes scenario. Choose **fast revert** or **fix forward** with
 #### Fast revert: flip DNS back
 
 Prereqs (all should be true if §1 of `cutover-dns.md` was followed):
+
 - TTL is low (60-300s).
 - Source services are scaled to 0 but otherwise intact.
 - No writes have landed in the new target's DB (or you're willing to lose them).

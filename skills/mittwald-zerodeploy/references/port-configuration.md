@@ -14,11 +14,13 @@ Port handling is one of the most common sources of deployment issues. This refer
 
 ## How Port Mapping Works
 
-### In traditional hosting:
+### In traditional hosting
+
 - App listens on a port (e.g., 3000)
 - You access it directly: `http://localhost:3000`
 
-### In container hosting:
+### In container hosting
+
 - App listens on a port **inside** the container (e.g., 8080)
 - **Ingress** maps external requests to that internal port
 - You access it via: `https://webapp.p-xxxxxx.project.space`
@@ -52,6 +54,7 @@ Most frameworks have conventional default ports:
 **Best practice**: Make your app respect the `PORT` environment variable.
 
 ### Why?
+
 - **Flexibility**: Change port without modifying code
 - **Compatibility**: Works with buildpacks, Docker, PaaS platforms
 - **Standardization**: Common convention across languages
@@ -59,6 +62,7 @@ Most frameworks have conventional default ports:
 ### Implementation Examples
 
 **Node.js/Express**:
+
 ```javascript
 const express = require('express');
 const app = express();
@@ -72,6 +76,7 @@ app.listen(port, '0.0.0.0', () => {
 ```
 
 **Python/Flask**:
+
 ```python
 import os
 from flask import Flask
@@ -84,6 +89,7 @@ if __name__ == '__main__':
 ```
 
 **Python/Django** (use environment in settings):
+
 ```python
 # In manage.py or wsgi.py
 import os
@@ -92,6 +98,7 @@ port = int(os.environ.get('PORT', 8000))
 ```
 
 **Go**:
+
 ```go
 package main
 
@@ -114,6 +121,7 @@ func main() {
 ```
 
 **PHP (using built-in server)**:
+
 ```bash
 php -S 0.0.0.0:${PORT:-8000}
 ```
@@ -124,7 +132,8 @@ php -S 0.0.0.0:${PORT:-8000}
 
 If your app doesn't respond on the expected port, **check the logs**:
 
-### In mStudio UI:
+### In mStudio UI
+
 1. Navigate to: `mStudio → Projects → [Your Project] → Containers`
 2. Find your container (search by URL prefix)
 3. Click on container → **Logs** tab
@@ -133,27 +142,31 @@ If your app doesn't respond on the expected port, **check the logs**:
    - `Server running at http://0.0.0.0:9000`
    - `Started on :8081`
 
-### Example log patterns:
+### Example log patterns
 
 **Express**:
+
 ```
 Server listening on port 3000
 Server running at http://0.0.0.0:3000
 ```
 
 **Flask**:
+
 ```
 * Running on http://0.0.0.0:5000
 * Debug mode: off
 ```
 
 **Django**:
+
 ```
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CONTROL-C.
 ```
 
 **Rails**:
+
 ```
 => Booting Puma
 => Rails 7.0.0 application starting in production
@@ -169,6 +182,7 @@ Quit the server with CONTROL-C.
 **When to use**: Port is hardcoded or difficult to change in app code.
 
 **Steps**:
+
 1. Let deployment complete (even if app isn't accessible)
 2. Check logs to find actual port
 3. Navigate to: `Container → Ports` tab in mStudio
@@ -177,9 +191,10 @@ Quit the server with CONTROL-C.
 5. Save changes
 6. Container restarts automatically
 7. Adjust ingress to new port mapping if needed
-7. Test URL again
+8. Test URL again
 
 **Advantages**:
+
 - ✅ No code changes needed
 - ✅ No redeployment needed
 - ✅ Works even for hardcoded ports
@@ -189,6 +204,7 @@ Quit the server with CONTROL-C.
 **When to use**: App respects `PORT` env var (recommended pattern).
 
 **CLI deployment**:
+
 ```bash
 mw experimental deploy --wait \
   --env PORT=8080 \
@@ -196,6 +212,7 @@ mw experimental deploy --wait \
 ```
 
 **GitHub Actions**:
+
 ```yaml
 - name: Create .env for deployment
   run: |
@@ -212,6 +229,7 @@ mw experimental deploy --wait \
 ```
 
 **Advantages**:
+
 - ✅ Standardizes port across environments
 - ✅ Works with Railpack's expectations
 - ✅ Better for infrastructure-as-code
@@ -223,6 +241,7 @@ mw experimental deploy --wait \
 **Make the app respect PORT env var** (see examples above in "The PORT Environment Variable" section).
 
 **Advantages**:
+
 - ✅ Most flexible long-term
 - ✅ Portable across different hosting platforms
 - ✅ Following best practices
@@ -234,32 +253,37 @@ mw experimental deploy --wait \
 **Critical**: Apps must listen on `0.0.0.0`, not `localhost` or `127.0.0.1`.
 
 ### Why?
+
 - **`0.0.0.0`**: Listens on all network interfaces (container networking works)
 - **`localhost` / `127.0.0.1`**: Only listens on loopback (ingress can't reach it)
 
-### Examples of WRONG configuration:
+### Examples of WRONG configuration
 
 **Node.js (bad)**:
+
 ```javascript
 app.listen(3000, 'localhost');  // ❌ Won't work in container
 app.listen(3000, '127.0.0.1'); // ❌ Won't work in container
 ```
 
 **Python (bad)**:
+
 ```python
 app.run(host='localhost', port=5000)  # ❌ Won't work
 app.run(host='127.0.0.1', port=5000)  # ❌ Won't work
 ```
 
-### Examples of CORRECT configuration:
+### Examples of CORRECT configuration
 
 **Node.js (good)**:
+
 ```javascript
 app.listen(3000, '0.0.0.0');  // ✅ Works
 app.listen(3000);             // ✅ Usually defaults to 0.0.0.0
 ```
 
 **Python (good)**:
+
 ```python
 app.run(host='0.0.0.0', port=5000)  # ✅ Works
 ```
@@ -291,6 +315,7 @@ Railpack will build static files and serve them (no port config needed).
 **Default**: Listens on port 3000, respects `PORT` env var.
 
 **Start command**:
+
 ```json
 {
   "scripts": {
@@ -300,6 +325,7 @@ Railpack will build static files and serve them (no port config needed).
 ```
 
 Or rely on Next.js respecting `PORT`:
+
 ```bash
 PORT=8080 npm start
 ```
@@ -319,6 +345,7 @@ gunicorn myproject.wsgi:application --bind 0.0.0.0:${PORT:-8000}
 ```
 
 **Or with environment variable**:
+
 ```python
 # In Procfile or start script
 import os
@@ -341,6 +368,7 @@ php artisan octane:start --port=${PORT:-8000} --host=0.0.0.0
 **Symptom**: App needs multiple ports (e.g., HTTP + WebSocket, HTTP + gRPC).
 
 **Example scenarios**:
+
 - Main HTTP on port 8080
 - WebSocket on port 8081
 - Admin panel on port 9000
@@ -356,21 +384,25 @@ This is an advanced use case. If your project requires complex port mappings, co
 ### Issue: 502 Bad Gateway
 
 **Diagnosis**:
+
 1. Check container logs for port binding message
 2. Note the port the app is listening on
 3. Compare with ingress configuration in mStudio
 
 **Fix**:
+
 - Reconfigure ingress to match actual port
 - Or pass `PORT` env var to standardize
 
 ### Issue: Connection Refused
 
 **Diagnosis**:
+
 - Container may not be running
 - App may have crashed on startup
 
 **Fix**:
+
 1. Check container status in mStudio (should be "Running")
 2. Review logs for crash errors
 3. If crash-looping, fix the underlying error (see `04-troubleshoot-deployment.md`)
@@ -378,6 +410,7 @@ This is an advanced use case. If your project requires complex port mappings, co
 ### Issue: Port Already in Use (Rare)
 
 **Error in logs**:
+
 ```
 Error: listen EADDRINUSE: address already in use :::8080
 ```
@@ -385,6 +418,7 @@ Error: listen EADDRINUSE: address already in use :::8080
 **This is very rare in containerized environments** (each container has isolated networking).
 
 **If it happens**:
+
 - May indicate misconfiguration in app startup
 - Check if app is trying to start multiple servers on the same port
 
@@ -394,19 +428,21 @@ Error: listen EADDRINUSE: address already in use :::8080
 
 **Before deploying**, test locally:
 
-### Node.js:
+### Node.js
+
 ```bash
 PORT=8080 npm start
 curl http://localhost:8080
 ```
 
-### Python:
+### Python
+
 ```bash
 PORT=8080 python app.py
 curl http://localhost:8080
 ```
 
-### Ensure app responds** on the configured port.
+### Ensure app responds** on the configured port
 
 ---
 

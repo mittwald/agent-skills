@@ -9,6 +9,7 @@ Knowing when to stop troubleshooting and hand off to an expert is a critical ski
 **After 2-3 failed deployment attempts with different approaches, it's time to escalate.**
 
 **Why?**
+
 - ⏱️ **Time vs. value**: Endless troubleshooting wastes more time than consulting an expert
 - 🎯 **Skill mismatch**: Complex container setups require specialized DevOps knowledge
 - ⚠️ **Risk of making it worse**: Incorrect fixes can create deeper problems
@@ -21,6 +22,7 @@ Knowing when to stop troubleshooting and hand off to an expert is a critical ski
 ### Escalate Immediately
 
 **1. Railpack can't detect project type**
+
 ```
 Error: Could not detect project type
 Error: No buildpack found
@@ -30,6 +32,7 @@ Error: Build plan generation failed
 **Why**: The project structure is too exotic for auto-detection. Requires custom Docker configuration.
 
 **2. Multiple services in one repository**
+
 - Monorepo with frontend + backend + worker
 - Multiple language runtimes needed (Node + Python, etc.)
 - Requires orchestration (Docker Compose, Kubernetes)
@@ -37,6 +40,7 @@ Error: Build plan generation failed
 **Why**: Zerodeploy is designed for single-service deployments. Multi-service architectures need `deploy-container-action` or orchestration tools.
 
 **3. Custom system dependencies required**
+
 ```
 Error: Required package 'libvips-dev' not found
 Error: Missing system library: librdkafka
@@ -45,6 +49,7 @@ Error: Missing system library: librdkafka
 **Why**: Railpack buildpacks have fixed base images. Custom dependencies require custom Dockerfiles.
 
 **4. Database or infrastructure provisioning needed**
+
 - App requires PostgreSQL, MySQL, Redis, etc.
 - Needs persistent volumes for data storage
 - Requires VPN or private networking
@@ -56,6 +61,7 @@ Error: Missing system library: librdkafka
 ### Escalate After 2-3 Attempts
 
 **1. Build succeeds but container crashes immediately**
+
 - Container status: "Crashed" in mStudio
 - Logs show startup errors or segmentation faults
 - Rapid restart loops (restart count > 5)
@@ -63,6 +69,7 @@ Error: Missing system library: librdkafka
 **If after 2-3 attempts** (checking env vars, port config, logs), the issue persists → escalate.
 
 **2. Build fails with cryptic errors**
+
 ```
 Error: Segmentation fault (core dumped)
 Error: Illegal instruction
@@ -72,6 +79,7 @@ Error: Build process killed
 **Why**: These are low-level errors outside the scope of basic troubleshooting.
 
 **3. Dependencies install but compilation fails**
+
 ```
 npm ERR! Failed to compile native addon
 ERROR: Failed building wheel for cryptography
@@ -80,10 +88,12 @@ ERROR: Failed building wheel for cryptography
 **Try once or twice** with updated dependencies or different versions. If still failing → escalate.
 
 **4. App works locally but fails in deployment**
+
 - Local: `npm start` works fine
 - Deployed: Container crashes or app doesn't respond
 
 **After checking**:
+
 - ✅ Environment variables are set correctly
 - ✅ Port configuration is correct
 - ✅ Logs don't show obvious errors
@@ -115,26 +125,31 @@ These are common issues with known solutions:
 
 ## What NOT to Do
 
-### ❌ Don't try these without expertise:
+### ❌ Don't try these without expertise
 
 **1. Writing custom Dockerfiles from scratch**
+
 - Without Docker knowledge, you'll create more problems
 - AI-generated Dockerfiles are often faulty (see `pitfalls.md`)
 
 **2. Deep-diving into buildpack internals**
+
 - Buildpacks are complex systems
 - Debugging them requires specialized knowledge
 
 **3. Iterating endlessly with minor config tweaks**
+
 - "Maybe if I change this flag..."
 - "Let me try this environment variable..."
 - **After 2-3 attempts, stop and escalate**
 
 **4. Modifying system packages or base images**
+
 - "Let me add this apt-get command..."
 - This requires custom Dockerfiles and expertise
 
 **5. Debugging container networking or volumes**
+
 - Requires understanding of Docker networking, overlay networks, etc.
 - Not a beginner topic
 
@@ -145,6 +160,7 @@ These are common issues with known solutions:
 ### Step 1: Document the problem
 
 **Gather information**:
+
 - ✅ Exact error messages (copy from terminal or workflow logs)
 - ✅ Full CLI command or GitHub Actions workflow used
 - ✅ Project structure overview (language, framework, key files)
@@ -152,6 +168,7 @@ These are common issues with known solutions:
 - ✅ Environment: CLI or GitHub Actions? Project ID?
 
 **Example documentation**:
+
 ```markdown
 ## Issue Summary
 Deployment fails during build phase with "buildpack not found" error.
@@ -159,8 +176,10 @@ Deployment fails during build phase with "buildpack not found" error.
 ## Error Message
 
 ```
+
 Error: Could not detect project type
 No buildpack found for this project
+
 ```
 
 ## Project Structure
@@ -182,7 +201,9 @@ mw experimental deploy --wait --env-file .env --project-id p-abc123
 ```
 
 ## Request
+
 Need guidance on whether this custom framework can work with Railpack or if custom Dockerfile is needed.
+
 ```
 
 ### Step 2: Provide access (if needed)

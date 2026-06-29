@@ -58,11 +58,13 @@ PGPASSWORD="$SRC_DB_PW" \
 **Variants.**
 
 - **Source is Kubernetes** with no direct DB access from your laptop: `kubectl exec` into a helper pod and dump from there:
+
   ```bash
   kubectl -n <ns> exec -i deploy/db-helper -- \
     pg_dump -h postgresql -U appuser -d appdb -F c -Z 6 --no-owner --no-acl \
     | ssh "$TGT_PROJ_SSH" "cat > $TGT_DUMP_PATH"
   ```
+
 - **Source is another mStudio project**: `ssh source-project-ssh 'pg_dump …' | ssh target-project-ssh 'cat > …'`.
 - **Want a progress bar**: insert `| pv -terab |` between dump and ssh — Pitfall #9, optional.
 

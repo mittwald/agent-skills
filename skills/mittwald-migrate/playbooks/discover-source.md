@@ -47,6 +47,7 @@ For each DB engine, capture: version, list of databases, per-DB size, extensions
 If the source is a common CMS (WordPress, TYPO3, Shopware), DB credentials, base-URL fields, and version-detection paths are catalogued in [`../references/cms-quirks.md`](../references/cms-quirks.md). Use that as the starting point.
 
 **PostgreSQL:**
+
 ```sql
 SELECT version();
 SELECT datname, pg_size_pretty(pg_database_size(datname)) FROM pg_database
@@ -55,6 +56,7 @@ SELECT extname, extversion FROM pg_extension ORDER BY extname;
 ```
 
 **MySQL / MariaDB:**
+
 ```sql
 SELECT VERSION();
 SELECT table_schema AS db, ROUND(SUM(data_length+index_length)/1024/1024,1) AS mb
@@ -91,6 +93,7 @@ If the app uses S3 / MinIO / Backblaze / equivalent: capture bucket names, regio
 ## 4. Secrets and config
 
 Enumerate:
+
 - Environment variables (filter `.env`, K8s `Secret`/`ConfigMap`, systemd `EnvironmentFile`).
 - Files containing secrets (private keys, JWT keys, OAuth client secrets).
 - **Things that change on migration**: DB hosts, redis hosts, SMTP relays. Build a "rewrite map" the operator can sanity-check.
@@ -108,6 +111,7 @@ Never paste secret values into the conversation. Refer to them by name.
 ## 6. Image sources
 
 For each container image:
+
 - Public registry path (e.g. `library/postgres:15.6`) — works on Mittwald out of the box.
 - Private registry — operator must push to Mittwald Project Registry first (Pitfall #14). Mark these as **blockers** for the Provision phase.
 - Self-built images without a registry — operator needs to build & push.
@@ -128,6 +132,7 @@ Minimum:
 5. If the source already runs as a Managed App on another mStudio project, check whether `mw app copy` (`mcp__mittwald__mittwald_app_copy`) is the cheaper path.
 
 Output of this step is one of:
+
 - "Managed App `<name>` `<version>`"
 - "Runtime app `<type>` (PHP / PHP-Worker / Node.js / Python / Static Files)" — for PHP-shaped apps with workers, this is usually **one PHP app + N PHP-Worker apps**
 - "Container Stack" — the fallback when nothing in the catalog fits

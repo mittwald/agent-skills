@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Consolidated repository structure with both mittwald-migrate and mittwald-zerodeploy-skill
 - Unified README.md covering both skills
 - DEVELOPING.md with contribution guidelines and repository conventions
@@ -20,11 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - This CHANGELOG.md
 
 ### Changed
+
 - Repository now houses multiple skills instead of single skill
 - Installation instructions updated to reflect consolidated structure
 - Both skills maintained in single repository for easier maintenance
 
 ### Migration from Separate Repositories
+
 - mittwald-migrate: Previously at mittwald/mstudio-migrate-skill
 - mittwald-zerodeploy-skill: Previously at mittwald/mittwald-zerodeploy-skill
 - All playbooks and references preserved in their respective skill directories

@@ -15,7 +15,7 @@ agent-skills/
 │   │   ├── SKILL.md            # Main entry point (< 200 lines)
 │   │   ├── playbooks/          # Step-by-step executable guides
 │   │   └── references/         # Background knowledge docs
-│   └── mittwald-zerodeploy-skill/  # Deployment skill
+│   └── mittwald-zerodeploy/  # Deployment skill
 │       ├── SKILL.md
 │       ├── playbooks/
 │       └── references/
@@ -43,6 +43,7 @@ agent-skills/
 - **Purpose**: Workflow index and trigger matcher
 - **Length**: < 200 lines
 - **Structure**:
+
   ```markdown
   # Skill Name
   
@@ -67,6 +68,7 @@ agent-skills/
 - **Naming**: Descriptive, action-oriented (e.g., `migrate-mysql.md`, `cutover-dns.md`)
 - **For zerodeploy**: Number-prefixed for sequence (e.g., `01-provision-target.md`)
 - **Structure**:
+
   ```markdown
   # Playbook Title
   
@@ -135,10 +137,11 @@ agent-skills/
 ### Manual Testing
 
 1. **Install locally**:
+
    ```bash
    mkdir -p ~/.agents/skills
    ln -s $(pwd)/skills/mittwald-migrate ~/.agents/skills/mittwald-migrate
-   ln -s $(pwd)/skills/mittwald-zerodeploy-skill ~/.agents/skills/mittwald-zerodeploy-skill
+   ln -s $(pwd)/skills/mittwald-zerodeploy ~/.agents/skills/mittwald-zerodeploy
    ```
 
 2. **Restart your AI assistant** (VS Code, Claude Code, etc.)
@@ -160,11 +163,54 @@ agent-skills/
 ### Testing with Different AI Assistants
 
 Test with multiple assistants to ensure compatibility:
+
 - VS Code Copilot
 - Claude Code
 - OpenAI Codex (via AGENTS.md)
 
 Each should be able to load and execute the skills without modification.
+
+---
+
+## Continuous Integration
+
+Because this repository is pure markdown, CI focuses on content integrity rather
+than builds or unit tests. Three checks run on every pull request (see
+`.github/workflows/ci.yml`):
+
+1. **Markdown lint** — `markdownlint-cli2` enforces consistent, clean-rendering
+   markdown. Rules are configured in `.markdownlint-cli2.jsonc`.
+2. **Internal link check** — `lychee --offline` verifies that every relative link
+   (playbook → reference, README → skill, etc.) points to a file that exists.
+3. **SKILL.md validation** — `scripts/validate-skills.sh` checks that each
+   `skills/*/SKILL.md` has valid frontmatter, that its `name:` matches the
+   directory, and that it stays under 200 lines.
+
+External URLs are **not** checked on PRs (third-party hosts go down or rate-limit,
+which would cause flaky failures). Instead, `.github/workflows/external-links.yml`
+checks them on a weekly schedule and opens a tracking issue if any are broken.
+
+### Running the checks locally (before every commit)
+
+Run these from the repository root and make sure all three pass before committing.
+A green local run means a green PR.
+
+```bash
+# 1. Markdown: auto-fix mechanical issues, then verify the result is clean.
+npx markdownlint-cli2 --fix "**/*.md"   # rewrites files in place
+npx markdownlint-cli2 "**/*.md"         # must report 0 errors
+
+# 2. Internal links resolve (requires lychee: https://github.com/lycheeverse/lychee,
+#    or run via Docker: docker run --rm -v "$PWD:/input" -w /input lycheeverse/lychee ...)
+lychee --offline --no-progress .         # must report 0 errors
+
+# 3. SKILL.md conventions: frontmatter present, name matches directory, < 200 lines.
+bash scripts/validate-skills.sh
+```
+
+**Keep mechanical formatting in its own commit.** When `--fix` reformats files,
+commit that reformat separately (e.g. `style: apply markdownlint auto-fixes`) from
+any content changes, so reviewers can read the substantive diff without noise.
 
 ---
 
@@ -194,14 +240,17 @@ Before submitting a PR:
 - **Error handling**: What to do when things go wrong
 
 **Good**:
+
 ```markdown
 1. Create the project:
    ```bash
    mw project create --name "my-project"
    ```
+
    Expected output: `Project created: p-abc123`
 
-2. If you see "Permission denied", verify your token has api_write scope.
+1. If you see "Permission denied", verify your token has api_write scope.
+
 ```
 
 **Bad**:
@@ -256,11 +305,13 @@ Skills don't have explicit version numbers. Instead:
 - **Latest master** is the default
 
 Users who need stability can:
+
 ```bash
 git clone --branch v1.0.0 https://github.com/mittwald/agent-skills.git
 ```
 
 Or pin to a commit:
+
 ```bash
 git clone https://github.com/mittwald/agent-skills.git
 cd agent-skills

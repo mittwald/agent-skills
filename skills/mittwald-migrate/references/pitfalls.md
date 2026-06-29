@@ -9,6 +9,7 @@ Real-world traps from prior migrations. Each entry: **symptom → why → fix**.
 **Symptom.** A tool call fails with "not found" or, worse, mutates the wrong object.
 
 **Why.** Mittwald has at least three classes of identifier in active use:
+
 - **Long UUIDs** for `projectId`, `stackId`, `containerId`, `appId` — used by MCP calls.
 - **Short IDs** like `p-laj9z8` (project), `c-si8vdg` (container), `a-edephs` (app) — used in SSH hostnames and the web UI.
 - **Customer-facing names** ("WeClapp-Prod", "blog") — used in UI dropdowns.
@@ -24,6 +25,7 @@ They look enough alike that they slip past visual review.
 **Symptom.** A call operates on the wrong project — typically the previous one the operator was working with.
 
 **Why.** Every Mittwald surface has a "default project" escape hatch that kicks in when no project ID is supplied, and each one can be stale:
+
 - **MCP**: `mcp__mittwald__mittwald_context_get_session` returns a session-default project from the operator's last session.
 - **CLI**: `mw context set --project-id=<id>` writes a persistent default to `~/.config/mw/`. Once set, every later `mw …` command without `-p` silently inherits it.
 - **API**: no built-in default — but operators sometimes hand-roll wrappers that inject one from an env var.
@@ -37,6 +39,7 @@ They look enough alike that they slip past visual review.
 **Symptom.** "Permission denied" or "host unreachable" trying to SSH into a stopped container.
 
 **Why.** Mittwald exposes two SSH targets per project:
+
 - **Project-Host-SSH**: `user@account@a-XXXXX@ssh.<host>.project.host` — a shell on the project host. Has `/files/...` mounted, can write to bind-mounts.
 - **Container-SSH**: `user@account@c-XXXXX@ssh.<host>.project.host` — a shell inside a running container. **Stopped containers are unreachable.**
 
@@ -73,6 +76,7 @@ When unsure, `ls /home/<p-shortId>/` and `ls /files/` over Project-Host-SSH befo
 **Why.** A `ReadWriteOnce` PersistentVolumeClaim can only be mounted by one pod at a time. The running app pod is holding it.
 
 **Fix.** Scale the app deployment to 0 before launching the helper pod:
+
 ```bash
 kubectl -n <ns> scale deploy/<app> --replicas=0
 kubectl -n <ns> wait --for=delete pod -l app=<app> --timeout=120s
@@ -80,6 +84,7 @@ kubectl -n <ns> wait --for=delete pod -l app=<app> --timeout=120s
 # … do the migration …
 # (optional) scale back if you want a rollback target on source side
 ```
+
 This is the formal start of the **downtime window** — communicate it to the operator before pulling the trigger.
 
 ---
@@ -103,10 +108,12 @@ This is the formal start of the **downtime window** — communicate it to the op
 **Why.** The `library/postgres` image creates a database on first start, named by `POSTGRES_DB`. By the time you connect to restore, that DB exists and is empty (or nearly so).
 
 **Fix.** Right before restore, connect to the `postgres` administrative DB and drop+recreate the target:
+
 ```bash
 psql -h postgresql -U postgres -d postgres -c "DROP DATABASE IF EXISTS appdb;"
 psql -h postgresql -U postgres -d postgres -c "CREATE DATABASE appdb OWNER appuser;"
 ```
+
 Then restore into the now-pristine `appdb`. Do **not** run `DROP` on the `postgres` administrative DB itself.
 
 ---
@@ -118,9 +125,11 @@ Then restore into the now-pristine `appdb`. Do **not** run `DROP` on the `postgr
 **Why.** In a pipeline like `pg_dump … | ssh host 'cat > dump.pgc'`, the shell reports the exit status of the **last** command by default. If `pg_dump` failed mid-stream, `cat` still exits 0 and the pipeline looks green.
 
 **Fix.** Every script in this skill starts with:
+
 ```bash
 set -Eeuo pipefail
 ```
+
 For ad-hoc one-liners typed at the prompt, prepend `set -o pipefail;` to the command.
 
 ---
@@ -132,9 +141,11 @@ For ad-hoc one-liners typed at the prompt, prepend `set -o pipefail;` to the com
 **Why.** `pv` is a third-party tool not installed by default on macOS, Windows, or many Linux distros.
 
 **Fix.** Don't make `pv` a hard dependency. Write pipelines as `pg_dump … | ssh …`, and offer `pv` as an opt-in wrapper:
+
 ```bash
 pg_dump … | pv -terabs <expected-size> | ssh …
 ```
+
 On systems without `pv`, suggest periodic `du -sh` checks on the target file from a second shell.
 
 ---
@@ -146,6 +157,7 @@ On systems without `pv`, suggest periodic `du -sh` checks on the target file fro
 **Why.** When Cloudflare proxies the hostname (orange cloud), HTTP requests to `/.well-known/acme-challenge/...` hit Cloudflare, not Mittwald. Mittwald can't answer the ACME challenge.
 
 **Fixes (pick one):**
+
 1. **Temporarily set Cloudflare to "DNS only"** (grey cloud) for the hostname, request the cert, switch back.
 2. **Cloudflare Origin Certificate** (15-year cert issued by Cloudflare) — upload to Mittwald via `certificate_request` as a custom cert. Public TLS terminates at Cloudflare; Mittwald-to-Cloudflare uses the Origin Cert.
 3. **Accept Mittwald serving self-signed** behind Cloudflare — only safe if Cloudflare's SSL mode is "Flexible" or "Full" (not "Full (strict)"). "Flexible" is **not recommended** for any real workload; "Full" tolerates self-signed; "Full (strict)" rejects it.
@@ -181,10 +193,12 @@ Document the chosen approach in the cutover plan.
 **Why.** A freshly restored DB has no dead tuples, no bloat, optimal page packing. The data is identical; the bytes aren't.
 
 **Fix.** Verify by comparing live row counts:
+
 ```sql
 SELECT schemaname, relname, n_live_tup
 FROM pg_stat_user_tables ORDER BY schemaname, relname;
 ```
+
 Diff source vs target. A non-zero diff is a real problem; identical counts at smaller bytes is healthy.
 
 (MySQL equivalent: `SELECT table_schema, table_name, table_rows FROM information_schema.tables` — note `table_rows` is approximate on InnoDB; for exact counts run `SELECT COUNT(*)` per table on critical ones.)
@@ -198,17 +212,21 @@ Diff source vs target. A non-zero diff is a real problem; identical counts at sm
 **Why.** Mittwald's runtime pulls images during deploy. Private registries (internal GitLab, ghcr.io with private packages, etc.) need credentials Mittwald doesn't have.
 
 **Fix.** Push the image to the **Mittwald Project Registry** before deploy:
+
 ```text
 mcp__mittwald__mittwald_registry_list
 mcp__mittwald__mittwald_registry_create   # if needed
 ```
+
 Image path becomes `<project-shortId>.project.space/<image>:<tag>`. Push from a host with credentials to both registries:
+
 ```bash
 docker pull registry.example/foo:1.2.3
 docker tag registry.example/foo:1.2.3 <project-shortId>.project.space/foo:1.2.3
 docker login <project-shortId>.project.space   # credentials from registry_create
 docker push <project-shortId>.project.space/foo:1.2.3
 ```
+
 Update the compose to reference the new path.
 
 ---
@@ -299,16 +317,20 @@ Because the container is rootless, it **cannot `chown` the mount point itself** 
 
 1. Make sure an `a-XXXXX` exists for Project-Host-SSH access (install a dummy Static app if there's no app yet — same prerequisite as Pitfall #19).
 2. Via Project-Host-SSH, create the directory and open permissions:
+
    ```bash
    ssh user@account@a-XXXXX@ssh.<host>.project.host \
      "mkdir -p /files/<app>/<data-dir> && chmod 777 /files/<app>/<data-dir>"
    ```
+
 3. **Only then** deploy the stack (`mw stack deploy …`). The container now starts cleanly because it can write into the open directory.
 4. (Optional, post-start tightening.) Once the container has started and you can read its runtime uid (`docker inspect` equivalent: `mw container get` / Container-SSH `id -u`), tighten via Container-SSH:
+
    ```bash
    ssh user@account@c-XXXXX@ssh.<host>.project.host \
      "chown -R <uid>:<gid> /var/data && chmod 700 /var/data"
    ```
+
    Skip this step if `chmod 777` is acceptable for your threat model — it usually is for paths that aren't shared between containers.
 
 If you know the container's uid in advance (Solr=8983, Postgres official image=999, etc.), prefer `chown <uid>:<gid>` over `chmod 777` from the start — same effect, narrower attack surface:
@@ -346,6 +368,7 @@ A `403` means **this token lacks the scope for this action**, not "this endpoint
 4. Available scopes are listable: `GET /v2/scopes` (returns the ~45 entries). Useful when designing a least-privilege token for a specific automation.
 
 **Diagnostic checklist for any 403 in this skill:**
+
 ```
 1. echo "$MITTWALD_API_TOKEN" | wc -c     # token actually set?
 2. curl -sS -H "Authorization: Bearer $MITTWALD_API_TOKEN" \
@@ -369,6 +392,7 @@ This is the kind of trap that produces lasting documentation rot: "this endpoint
 
 - **PHP runtime app** (`mw app create php`) — set the install's document-root path to include `public`. Confirm via `mw app get <installationId>` after creation.
 - **Container Stack** — the web service (`nginx`/`apache`/`php-fpm` with `caddy`/etc.) must mount and route from `public/`. Compose example:
+
   ```yaml
   services:
     app:
@@ -417,13 +441,16 @@ When the migration plan assumes single-site, the consequences cascade: virtualho
 **Fix.** Detect during Discovery, **before** Plan:
 
 - **WordPress**:
+
   ```bash
   grep -E "define\\(\\s*'MULTISITE'\\s*,\\s*true" wp-config.php
   # also: SUBDOMAIN_INSTALL, DOMAIN_CURRENT_SITE, PATH_CURRENT_SITE
   # DB-side:
   mysql -e "SELECT blog_id, domain, path FROM wp_blogs;" <db>
   ```
+
 - **TYPO3**:
+
   ```bash
   ls typo3conf/sites/   # or config/sites/ for Composer layout
   # each subdirectory is one site
@@ -442,14 +469,18 @@ If multisite, re-plan: provision all virtualhosts (one per domain), recompute DB
 **Fix.** Always wait for readiness before the next step:
 
 - **CLI** — pass `-w / --wait` (with `--wait-timeout`, default `600s`) on the create/install call itself:
+
   ```bash
   mw app install wordpress -p <projectId> -w --wait-timeout 600s
   mw app create php        -p <projectId> -w --wait-timeout 600s
   ```
+
 - **MCP / API** — there's no wait flag (and MCP can't install at all), so poll:
+
   ```text
   mcp__mittwald__mittwald_app_get  installationId=<id>   # read .phase
   ```
+
   The `phase` enum is `pending`, `installing`, `upgrading`, `ready`, `disabled`, `reconfiguring`. Loop until `ready`. Narrate the wait to the operator rather than blocking silently.
 
 Only after `phase == "ready"` do you: establish SSH access (own studio user or per-project `ssh_user_create`), write php.ini overrides, land dumps, or run any migration step. The same applies after `app_upgrade` (transient `upgrading` phase). See [`../playbooks/provision-target.md`](../playbooks/provision-target.md) §3a and [`ssh-modes.md`](ssh-modes.md).

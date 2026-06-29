@@ -84,6 +84,7 @@ mcp__mittwald__mittwald_app_get       installationId=<id>  # read the `phase` fi
 The `phase` field is the readiness indicator (enum: `pending`, `installing`, `upgrading`, `ready`, `disabled`, `reconfiguring`). **Treat only `phase == "ready"` as usable.** Narrate the wait to the operator — don't silently block.
 
 The installation produces:
+
 - `installationId` (UUID) — used by `app_get`, `app_upgrade`, `app_uninstall`, `app_copy`, `app_list_upgrade_candidates`.
 - `shortId` / `hostname` — the `a-XXXXX` token used as the Project-Host-SSH routing fragment (below).
 - A default URL on `<shortId>.project.space` for smoke-testing (Pitfall #17), same as with stacks.
@@ -97,6 +98,7 @@ Once `phase == "ready"`, you'll need SSH to reach the app's files (under `/home/
 
 - **Own studio user** (default): if the operator's public key is already registered (Studio UI or `POST /v2/users/self/ssh-keys`, see [`../references/ssh-modes.md`](../references/ssh-modes.md) and the README), no per-project setup is needed. The SSH identity is their email.
 - **Per-project ssh-user** (CI / service account): create one scoped to this project:
+
   ```text
   mcp__mittwald__mittwald_ssh_user_create   projectId=<uuid>  publicKey=<ssh-…>  description="migration"
   # CLI: mw ssh-user create -p <projectId> --public-key "$(cat ~/.ssh/id_ed25519.pub)" --description "migration"
@@ -195,6 +197,7 @@ mcp__mittwald__mittwald_stack_deploy
 The call is **declarative** — it applies the YAML as desired state. Idempotent (Pitfall: re-deploys are safe to retry).
 
 After deploy:
+
 ```text
 mcp__mittwald__mittwald_stack_list      # confirm stack present, get stackId
 mcp__mittwald__mittwald_stack_ps        # confirm all services in 'running' state
@@ -218,6 +221,7 @@ mcp__mittwald__mittwald_domain_virtualhost_create
 You don't need DNS to point at Mittwald yet. The virtualhost is created in a "DNS-pending" state; the **default `<shortId>.project.space` URL works immediately** and proxies to the same container/path config. That's your test surface.
 
 For the real domain:
+
 ```text
 mcp__mittwald__mittwald_domain_virtualhost_list    # check current state + LE status
 mcp__mittwald__mittwald_certificate_list           # see what certs exist
@@ -264,10 +268,12 @@ Before deploy, confirm every image referenced in the compose YAML is reachable:
 
 - `library/*`, `bitnami/*`, official Docker Hub — fine.
 - Anything from `ghcr.io`, `registry.gitlab.com`, internal registries — **the Mittwald runtime must be able to pull it**. Push to the Mittwald Project Registry first if it's private (Pitfall #14):
+
   ```text
   mcp__mittwald__mittwald_registry_create     # if not yet present
   mcp__mittwald__mittwald_registry_list
   ```
+
   Image path will be `<project-shortId>.project.space/<image>:<tag>`.
 
 ## 9. Confirmation gate before stack_deploy
@@ -290,6 +296,7 @@ Ask `AskUserQuestion`: approve / change shape / cancel.
 ## 10. End of phase
 
 Outputs to record for later phases:
+
 - `projectId` (UUID)
 - `stackId` (UUID)
 - service shortIds (for Container-SSH later — Pitfall #3)

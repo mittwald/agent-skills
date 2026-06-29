@@ -38,6 +38,7 @@ Zero-config deployment to mStudio container hosting using Railpack auto-detectio
 ### 1. Prerequisites
 
 Before using either skill:
+
 - ✅ Active mittwald mStudio account
 - ✅ API token with **`api_write`** role from <https://studio.mittwald.de/app/profile/api-tokens>
 - ✅ mittwald CLI installed ([install guide](https://developer.mittwald.de/docs/v2/cli/))
@@ -45,6 +46,7 @@ Before using either skill:
 ### 2. Install the skills
 
 **For Claude Code** (recommended) — use the native plugin marketplace:
+
 ```bash
 /plugin marketplace add mittwald/agent-skills
 /plugin install mittwald-migrate@agent-skills
@@ -52,6 +54,7 @@ Before using either skill:
 ```
 
 **For any other AI assistant** — use the [`skills`](https://www.npmjs.com/package/skills) CLI:
+
 ```bash
 npx skills add mittwald/agent-skills
 ```
@@ -59,6 +62,7 @@ npx skills add mittwald/agent-skills
 This installs the skills into the location your agent expects (e.g. VS Code Copilot, Cursor, and others).
 
 **Manual install** (fallback) — clone the repository into your agent's skills directory:
+
 ```bash
 # VS Code Copilot — personal skills
 git clone https://github.com/mittwald/agent-skills.git ~/.agents/skills/mittwald-skills
@@ -66,6 +70,7 @@ git clone https://github.com/mittwald/agent-skills.git ~/.agents/skills/mittwald
 # Claude Code
 git clone https://github.com/mittwald/agent-skills.git ~/.claude/skills/mittwald-skills
 ```
+
 Check your agent's documentation for the correct skill installation path.
 
 ### 3. Trigger the skills
@@ -91,12 +96,14 @@ The Mittwald MCP server runs inside your AI session; the skills call its `mcp__m
 ### Option 2 — `mw` CLI (best for terminal workflows)
 
 Install:
+
 ```bash
 brew tap mittwald/cli && brew install mw      # macOS
 # or: npm install -g @mittwald/cli            # any OS, Node ≥ 20.7
 ```
 
 Authenticate:
+
 ```bash
 mw login token          # paste your api_write token
 mw user get             # verify it works
@@ -105,6 +112,7 @@ mw user get             # verify it works
 ### Option 3 — HTTP API (for scripts)
 
 Set environment variable:
+
 ```bash
 export MITTWALD_API_TOKEN=<your-api_write-token>
 curl -H "Authorization: Bearer $MITTWALD_API_TOKEN" https://api.mittwald.de/v2/users/self
@@ -119,6 +127,7 @@ Or use [`example.env`](example.env) as a template.
 The **mittwald-migrate** skill creates SSH users on demand when needed. You usually don't need to configure SSH manually.
 
 If you want to SSH in yourself:
+
 - Register your public key at <https://studio.mittwald.de/app/profile/ssh-keys>
 - Your SSH identity is your studio account's email
 
@@ -205,6 +214,7 @@ agent-skills/
 **User**: "I want to migrate my WordPress site from Hetzner to Mittwald"
 
 **AI Assistant** (using mittwald-migrate):
+
 1. Loads discovery playbook
 2. Asks about source environment (Hetzner VPS details)
 3. Plans target mStudio structure
@@ -219,6 +229,7 @@ agent-skills/
 **User**: "Help me deploy my Express app to mittwald"
 
 **AI Assistant** (using mittwald-zerodeploy):
+
 1. Verifies mStudio setup
 2. Tests deployment locally with `mw experimental deploy`
 3. Sets up GitHub Actions workflow
@@ -248,6 +259,7 @@ If you use OpenAI Codex: place [`AGENTS.md`](AGENTS.md) at your project root. It
 ## Contributing
 
 See [DEVELOPING.md](DEVELOPING.md) for:
+
 - Repository structure and design rationale
 - Adding new playbooks or references
 - Testing skill changes
@@ -258,6 +270,7 @@ See [DEVELOPING.md](DEVELOPING.md) for:
 ## Resources
 
 ### Official Documentation
+
 - **mittwald mStudio**: https://studio.mittwald.de
 - **mittwald Developer Docs**: https://developer.mittwald.de
 - **mittwald CLI**: https://github.com/mittwald/cli
@@ -266,6 +279,7 @@ See [DEVELOPING.md](DEVELOPING.md) for:
 - **Railpack**: https://railpack.com/getting-started
 
 ### Support
+
 - **mittwald Support**: Ticket system at https://studio.mittwald.de (login required)
 - **GitHub Issues**: [Report skill issues here](https://github.com/mittwald/agent-skills/issues)
 
@@ -274,6 +288,7 @@ See [DEVELOPING.md](DEVELOPING.md) for:
 ## Compatibility
 
 These skills work with any AI coding assistant that supports:
+
 - ✅ Reading markdown files
 - ✅ Loading skill definitions from a directory
 - ✅ Following structured playbook workflows
