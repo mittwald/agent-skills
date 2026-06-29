@@ -46,6 +46,7 @@ Before using either skill:
 ### 2. Install the skills
 
 **For Claude Code** (recommended) — use the native plugin marketplace:
+
 ```bash
 /plugin marketplace add mittwald/agent-skills
 /plugin install mittwald-migrate@agent-skills
@@ -53,6 +54,7 @@ Before using either skill:
 ```
 
 **For any other AI assistant** — use the [`skills`](https://www.npmjs.com/package/skills) CLI:
+
 ```bash
 npx skills add mittwald/agent-skills
 ```
@@ -60,6 +62,7 @@ npx skills add mittwald/agent-skills
 This installs the skills into the location your agent expects (e.g. VS Code Copilot, Cursor, and others).
 
 **Manual install** (fallback) — clone the repository into your agent's skills directory:
+
 ```bash
 # VS Code Copilot — personal skills
 git clone https://github.com/mittwald/agent-skills.git ~/.agents/skills/mittwald-skills
@@ -67,6 +70,7 @@ git clone https://github.com/mittwald/agent-skills.git ~/.agents/skills/mittwald
 # Claude Code
 git clone https://github.com/mittwald/agent-skills.git ~/.claude/skills/mittwald-skills
 ```
+
 Check your agent's documentation for the correct skill installation path.
 
 ### 3. Trigger the skills
