@@ -22,6 +22,14 @@ Where:
 
 Both modes go through the same SSH gateway (`ssh.<cluster>.<clusterDomain>`).
 
+> **Local SSH multiplexing breaks mStudio connections.** If your `~/.ssh/config` enables connection sharing (`ControlMaster auto` with a `ControlPath`), an mStudio connection can fail with a misleading `could not connect to project` even though the key is registered and the app is `ready` — the shared control socket is keyed on the gateway host and collides with the multi-`@` routing identity. Disable it per connection:
+>
+> ```
+> ssh -o ControlMaster=no -o ControlPath=none <ssh-identity>@<short-id>@ssh.<cluster>.project.host
+> ```
+>
+> Apply the same two flags to any `scp` / `rsync -e ssh` / `tar … | ssh …` pipeline against mStudio.
+
 ## Two SSH user models — which one are you using?
 
 This decides where the SSH key lives and what the `<ssh-identity>` looks like in the URL.

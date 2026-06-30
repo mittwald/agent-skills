@@ -25,6 +25,16 @@ curl -sS -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer $MITTWALD_AP
   https://api.mittwald.de/v2/postgres-versions # expect 404
 ```
 
+## Default: mirror the source engine
+
+For an autonomous migration the **default is to reproduce the source faithfully** — same engine, same major version. Switching engines is a behaviour change whose breakage often surfaces only in production, so it is an **explicit operator decision, never the agent's default**.
+
+- **Source is MariaDB → target is a MariaDB *container*** (matching major, e.g. `mariadb:10.11`). Do **not** import a MariaDB dump into managed MySQL by default. MariaDB and MySQL have diverged — auth plugins, `utf8mb4` collations, system tables, JSON handling, sequences, virtual-column syntax — so schemas usually port but app-level expectations can break after cutover.
+- **Source is MySQL → target is MySQL** (managed or container — decided below).
+- A MariaDB→MySQL (or any cross-engine) swap is only appropriate when the operator explicitly asks for it and accepts the compatibility risk. Surface it as a question; don't bake it into the plan.
+
+A managed or runtime app can still talk to a container DB by service name (apps and containers share the project network — see "App ↔ container DB networking" below), so **"managed app + container MariaDB" is a fully supported, first-class shape**, not a workaround.
+
 ## Live-query primitives
 
 | Operation | MCP | CLI | API |
@@ -91,10 +101,20 @@ Result: upgrade-required from 5.5 to ≥5.6 — propose 5.7 for closest semantic
 
 ## When the managed engine is the right call
 
+(Assumes the source engine is **MySQL** — for a **MariaDB** source, mirror to a container; see "Default: mirror the source engine".)
+
 - App is a Managed App (e.g. WordPress) where Mittwald is already responsible for the runtime — pair it with a managed DB for consistency and to let Mittwald do the upgrades.
 - Source's DB version is well-supported, with no exotic config.
 - Operator explicitly wants Mittwald to handle backups, point-in-time recovery, and security patches.
 - The DB is a small, well-bounded thing (a Redis cache, a single-app MySQL instance) — managed gives you less surface to operate.
+
+## App ↔ container DB networking
+
+Within a project, **apps and container stacks share the same network**. A managed or runtime app reaches a stack service by its **service name** as hostname (the service's map key in the compose — e.g. `mariadb`), the same way containers reach each other (Pitfall #16). Per the mittwald docs: *"Managed applications and containers are connected to the same network. […] you can access managed applications from your containers and vice versa"* ([containers platform docs](https://developer.mittwald.de/docs/v2/platform/workloads/containers/)).
+
+Consequence: a PHP / Node.js / Python runtime app (or a Managed App) can use a **container database** with `DB_HOST=<service-name>` — no port-forward, no public exposure. This is the recommended shape when mirroring a container-only engine (MariaDB, Postgres, Mongo).
+
+Contrast with **managed** MySQL/Redis, which live *outside* the stack network: reach them via the host from `database_mysql_get` / `database_redis_get`, not a service name (Pitfall #16 does not apply to managed DBs).
 
 ## Cross-references
 
