@@ -341,6 +341,19 @@ When removing old playbooks or references:
 3. Keep the file for 6 months
 4. Then remove in a clearly-marked PR
 
+### Harvesting migration-learnings issues
+
+At the end of a real migration, the `mittwald-migrate` skill offers the operator the chance to file a short, **sanitized** issue summarizing what happened (see the [`contribute-learnings`](skills/mittwald-migrate/playbooks/contribute-learnings.md) playbook). These land on this repo with the `migration-learnings` label and are the raw material for growing the skill. Harvest them periodically:
+
+1. List open issues labelled `migration-learnings`.
+2. **Re-check sanitization first** — these are public; if one slipped in a secret or identifying detail, edit it down (or ask the author) before acting on it.
+3. **Verify each claimed trap** against the current API / `mw` CLI / developer docs — they are operator-reported, not yet confirmed.
+4. Turn each confirmed new trap into an appended entry in [`mittwald-migrate/references/pitfalls.md`](skills/mittwald-migrate/references/pitfalls.md) and wire it into the relevant playbook step.
+5. Turn runbook gaps ("step X was thin, wrong, or missing") into playbook edits.
+6. Close the issue referencing the commit or PR that harvested it, so the trail stays traceable.
+
+Worked example: [issue #10](https://github.com/mittwald/agent-skills/issues/10) (Shared Hosting → PHP Runtime App + MariaDB Container).
+
 ---
 
 ## Common Pitfalls (for Contributors)

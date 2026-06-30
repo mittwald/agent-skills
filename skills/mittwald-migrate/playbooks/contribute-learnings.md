@@ -12,7 +12,7 @@ Entry condition: the migration reached a natural end (Verify passed, or Cutover 
 
 Ask once, plainly, with `AskUserQuestion` (or the surface's equivalent):
 
-> "Optional: I can draft a short, anonymized issue on the `mittwald-migrate` GitHub repo summarizing this migration — what worked, what was unclear, any new trap — so the skill improves over time. **It contains no secrets or identifying details** (I'll show you the exact text first). Want me to draft it?"
+> "Optional: I can draft a short, anonymized issue on the mittwald `agent-skills` GitHub repo summarizing this migration — what worked, what was unclear, any new trap — so the skill improves over time. **It contains no secrets or identifying details** (I'll show you the exact text first). Want me to draft it?"
 
 Default is **no**. If declined, end here. Don't re-ask, don't nag.
 
@@ -111,13 +111,13 @@ Do not proceed without an explicit "create". If the operator edits, re-show the 
 
 ## 5. Create it
 
-Target the skill's own repo with the `migration-learnings` label so maintainers can find it.
+Target the marketplace repo (`mittwald/agent-skills`) with the `migration-learnings` label so maintainers can find it.
 
 **Preferred — `gh` CLI** (if available and the operator is authenticated):
 
 ```bash
 gh issue create \
-  --repo mittwald/mstudio-migrate-skill \
+  --repo mittwald/agent-skills \
   --label migration-learnings \
   --title "Migration learnings: <source-category> → <target-shape>" \
   --body-file <(cat <<'BODY'
@@ -129,7 +129,7 @@ BODY
 If the `migration-learnings` label doesn't exist on the operator's side, drop `--label` (a maintainer labels it later) — don't let a missing label block the contribution.
 
 **Fallback — no `gh` / no access:** print the title + body in a fenced block and tell the operator they can paste it at
-`https://github.com/mittwald/mstudio-migrate-skill/issues/new` (label `migration-learnings` if they can). Filing on a public repo only needs a GitHub account.
+`https://github.com/mittwald/agent-skills/issues/new` (label `migration-learnings` if they can). Filing on a public repo only needs a GitHub account.
 
 After creation, share the issue URL (if `gh` returned one) and thank them. Done.
 
@@ -137,7 +137,7 @@ After creation, share the issue URL (if `gh` returned one) and thank them. Done.
 
 ## 6. Read-back (maintainer side — not run during a migration)
 
-These issues are harvested separately to grow the skill. See [`../../../AGENTS.md`](../../../AGENTS.md) §"How to extend" → "Harvesting migration-learnings issues" and [`../../../DEVELOPING.md`](../../../DEVELOPING.md). In short: a maintainer reads `migration-learnings`-labelled issues, turns confirmed new traps into appended pitfalls and runbook gaps into playbook edits, then closes the issue referencing the commit.
+These issues are harvested separately to grow the skill. See [`../../../DEVELOPING.md`](../../../DEVELOPING.md) §"Maintenance" → "Harvesting migration-learnings issues". In short: a maintainer reads `migration-learnings`-labelled issues, turns confirmed new traps into appended pitfalls and runbook gaps into playbook edits, then closes the issue referencing the commit.
 
 ---
 
