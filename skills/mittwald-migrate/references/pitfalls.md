@@ -249,6 +249,8 @@ Update the compose to reference the new path.
 
 **Fix.** Rewrite source-side DB hostnames to bare service names: `DB_HOST=postgresql`, `REDIS_HOST=redis`. Capture this in the env-var rewrite map during Discovery.
 
+This reach extends **across the app↔stack boundary**: a managed or runtime app in the same project resolves a container service by the same service name (apps and containers share the project network), so "runtime app + container DB" works with `DB_HOST=<service-name>`. See [`database-engines.md`](database-engines.md) § "App ↔ container DB networking". (Managed MySQL/Redis are the exception — they live outside the stack network and are reached by host, not service name.)
+
 ---
 
 ## #17 — Default `<shortId>.project.space` is your smoke-test surface

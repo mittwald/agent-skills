@@ -79,6 +79,18 @@ For each persistent path, capture: mount path, real size, file count, "hot" (con
 
 **Watch out for "index" volumes** that are populated on demand (Solr, Elasticsearch, generated caches — Pitfall #11). If `du` shows them small or empty, do not waste time copying them; let the target rebuild on first start.
 
+### Release-symlink layouts (Deployer / Capistrano)
+
+PHP/Ruby sources deployed with **Deployer** or **Capistrano** use a release-rotation layout: `current/` is a symlink to the active `releases/<timestamp>/`, and persistent data (uploads, `.env`, logs) lives in `shared/`, symlinked into each release. Spot it during the file inventory — `ls -l` on the app root shows `current -> releases/<ts>`.
+
+Migrate the **active state only**, not the machinery:
+
+- **Don't** copy the whole tree — `releases/` holds N old deploys and multiplies the data.
+- **Don't** ship the symlinks as-is — they'd land as broken links on the target.
+- **Do** transfer from `current/` with `tar -h` (dereference): the active release *and* the `shared/` content it links to come across as one flat tree, into the target's single document root. You do **not** rebuild the `current`/`releases`/`shared` scaffolding on mStudio. Mechanics: [`migrate-files.md`](migrate-files.md).
+
+(If the operator wants to keep deploying *to* mStudio with Deployer afterwards, that's a separate post-migration setup — out of scope for the data move.)
+
 ### External object storage / S3
 
 If the app uses S3 / MinIO / Backblaze / equivalent: capture bucket names, region, total size, number of objects. Decision point: keep on the original provider (often the cheapest path) or move to Mittwald-attached storage / a project-mounted bucket. Often: **keep**.
@@ -145,7 +157,7 @@ Same discipline for the data plane. Full procedure in [`../references/database-e
 
 For **each DB engine** in the inventory from §2:
 
-1. If the engine is not MySQL and not Redis → **container in the stack**. Stop.
+1. If the engine is not MySQL and not Redis → **container in the stack**. Stop. This includes **MariaDB**: mirror it to a `mariadb:<major>` container — don't route a MariaDB source to managed MySQL by default (engine swap = explicit operator opt-in; see [`../references/database-engines.md`](../references/database-engines.md) "Default: mirror the source engine").
 2. If it is MySQL or Redis → live-query the supported versions:
    - MySQL: `mw database mysql versions` / `mcp__mittwald__mittwald_database_mysql_versions` / `GET /v2/mysql-versions`
    - Redis: `mw database redis versions -p <projectId>` (CLI quirk — projectId required) / `mcp__mittwald__mittwald_database_redis_versions` / `GET /v2/redis-versions`
@@ -192,6 +204,7 @@ Produce a markdown summary and present it to the operator. Template:
 | Source engine | Source version | Target | Reason |
 |---|---|---|---|
 | MySQL | 5.7 | managed MySQL 5.7 | exact match, non-disabled |
+| MariaDB | 10.11 | container `mariadb:10.11` | mirror source engine — MariaDB ≠ managed MySQL |
 | Redis | 7.0 | container `redis:7.0` | 7.0 is `disabled: true`, source operator doesn't want to upgrade |
 | Postgres | 15.6 | container `library/postgres:15.6` | no managed Postgres on mStudio |
 

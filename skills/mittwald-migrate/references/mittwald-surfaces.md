@@ -110,7 +110,7 @@ Identifier convention below: `{projectId}` etc. are UUIDs. CLI accepts short-IDs
 | Operation | MCP | CLI | API |
 |---|---|---|---|
 | List projects | `project_list` | `mw project list -o json` | `GET /v2/projects` |
-| Get project | `project_get` | `mw project get -p {projectId} -o json` | `GET /v2/projects/{projectId}` |
+| Get project | `project_get` | `mw project get {projectId} -o json` ⚠ project is a **positional** arg, not `-p` | `GET /v2/projects/{projectId}` |
 | Create project | `project_create` | `mw project create ...` | `POST /v2/servers/{serverId}/projects` |
 | Delete project (destructive) | `project_delete` | `mw project delete {projectId} -f` | `DELETE /v2/projects/{projectId}` |
 | Assemble SSH connection info | `project_ssh` (returns ready-to-use ssh command) | `mw project ssh <projectId>` ⚠ takes the project as a **positional** arg, not `-p` — opens an interactive shell directly | composed from `clusterId` + `clusterDomain` + `shortId` on the project object, plus an app or container shortId. No single endpoint; see [`ssh-modes.md`](ssh-modes.md) §"Assembling the SSH command from API fields". |
@@ -167,6 +167,7 @@ Managed engines on mStudio: **MySQL and Redis only**. Everything else → contai
 | List / get domain | `domain_list` / `_get` | `mw domain list -o json` / `mw domain get {id}` | `GET /v2/projects/{projectId}/domains[/{id}]` |
 | List virtualhosts | `domain_virtualhost_list` | `mw domain virtualhost list -o json` | `GET /v2/projects/{projectId}/ingresses` |
 | Create / delete virtualhost | `domain_virtualhost_create` / `_delete` | `mw domain virtualhost create/delete` | `POST` / `DELETE /v2/projects/{projectId}/ingresses[/{id}]` |
+| Update virtualhost **paths** (re-route) | — | — (no CLI command yet; delete+recreate, or use API) | `PATCH /v2/ingresses/{ingressId}/paths` — **resource-scoped**, not under `…/projects/{id}/…` |
 | Get DNS zone | `domain_dnszone_get` / `_list` | `mw domain dns get/list` | `GET /v2/projects/{projectId}/dns-zones[/{id}]` |
 | Update DNS zone | `domain_dnszone_update` | `mw domain dns update {zoneId}` | `PUT /v2/projects/{projectId}/dns-zones/{id}/records` |
 
@@ -181,10 +182,12 @@ Managed engines on mStudio: **MySQL and Redis only**. Everything else → contai
 
 | Operation | MCP | CLI | API |
 |---|---|---|---|
-| One-shot backup | `backup_create` | `mw project backup create --expires 30d` | `POST /v2/projects/{projectId}/backups` |
-| List / get / delete | `backup_list` / `_get` / `_delete` | `mw project backup list/get/delete` | `GET` / `DELETE /v2/projects/{projectId}/backups[/{id}]` |
-| Download | — | `mw project backup download {id}` | dedicated endpoint via signed URL |
-| Schedules | `backup_schedule_*` | `mw project backupschedule list` (+ create/update/delete) | `…/backup-schedules…` |
+| One-shot backup | `backup_create` | `mw backup create --expires 30d` | `POST /v2/projects/{projectId}/backups` |
+| List / get / delete | `backup_list` / `_get` / `_delete` | `mw backup list/get/delete` | `GET` / `DELETE /v2/projects/{projectId}/backups[/{id}]` |
+| Download | — | `mw backup download {id}` | dedicated endpoint via signed URL |
+| Schedules | `backup_schedule_*` | `mw backup schedule list` (+ create/update/delete) | `…/backup-schedules…` |
+
+> ⚠ The `mw project backup …` / `mw project backupschedule …` forms are **deprecated** — the CLI now nests these under `mw backup …` / `mw backup schedule …`.
 
 ### Registry, SSH users, volumes
 

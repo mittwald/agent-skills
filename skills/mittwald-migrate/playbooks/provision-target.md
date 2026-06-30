@@ -237,6 +237,8 @@ The decision was already made in Discovery's DB-engines self-check ([`discover-s
 
 ### Managed MySQL
 
+Only for a genuine **MySQL** source. Mirror a **MariaDB** source to a container instead (see "Container DBs" below) — don't import MariaDB into managed MySQL by default ([`../references/database-engines.md`](../references/database-engines.md) "Default: mirror the source engine").
+
 ```text
 mcp__mittwald__mittwald_database_mysql_versions     # confirm chosen version is offered and not disabled
 mcp__mittwald__mittwald_database_mysql_create

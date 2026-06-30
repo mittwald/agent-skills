@@ -6,6 +6,8 @@
 
 Decision was made during Discovery's DB-engines self-check ([`discover-source.md`](discover-source.md) §7b; full rules in [`../references/database-engines.md`](../references/database-engines.md)). One of two paths:
 
+> **Default = mirror the source engine.** A **MariaDB** source goes to a **`mariadb:<major>` container**, not managed MySQL — importing MariaDB into managed MySQL is an engine swap that only happens on explicit operator opt-in (see [`database-engines.md`](../references/database-engines.md) "Default: mirror the source engine"). The managed-vs-container choice below applies to genuine **MySQL** sources.
+
 | Choice | Pros | Cons |
 |---|---|---|
 | Mittwald-managed MySQL | Mittwald owns backups, upgrades, monitoring | Limited version flexibility, not in the same stack network |
