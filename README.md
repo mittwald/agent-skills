@@ -50,7 +50,7 @@ Before using either skill:
 ```bash
 /plugin marketplace add mittwald/agent-skills
 /plugin install mittwald-migrate@agent-skills
-/plugin install mittwald-zerodeploy-skill@agent-skills
+/plugin install mittwald-zerodeploy@agent-skills
 ```
 
 **For any other AI assistant** — use the [`skills`](https://www.npmjs.com/package/skills) CLI:

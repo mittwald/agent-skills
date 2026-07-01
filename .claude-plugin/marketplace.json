@@ -1,0 +1,20 @@
+{
+  "name": "agent-skills",
+  "description": "Collection of Mittwald skills for the Claude plugin system.",
+  "owner": {
+    "name": "Mittwald CM Service GmbH & Co. KG",
+    "url": "https://www.mittwald.de"
+  },
+  "plugins": [
+    {
+      "name": "mittwald-migrate",
+      "source": "./skills/mittwald-migrate",
+      "description": "Guides a conversational, phase-by-phase migration of an application to Mittwald mStudio."
+    },
+    {
+      "name": "mittwald-zerodeploy",
+      "source": "./skills/mittwald-zerodeploy",
+      "description": "Zero-config deployment to Mittwald mStudio container hosting using Railpack build inference."
+    }
+  ]
+}
