@@ -1,0 +1,12 @@
+{
+  "name": "mittwald-zerodeploy",
+  "description": "Zero-config deployment to Mittwald mStudio container hosting using Railpack build inference.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Mittwald CM Service GmbH & Co. KG",
+    "url": "https://www.mittwald.de"
+  },
+  "homepage": "https://github.com/mittwald/agent-skills",
+  "repository": "https://github.com/mittwald/agent-skills",
+  "license": "MIT"
+}
