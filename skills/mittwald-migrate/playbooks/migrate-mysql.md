@@ -77,6 +77,22 @@ MYSQL_PWD="$TGT_DB_PW" \
 
 If the dump lives on the project host: SSH there first (Project-Host-SSH, Pitfall #3) and run from there.
 
+**Native CLI alternative — `mw database mysql import`.** Instead of a raw `mysql` client, the CLI imports directly (it tunnels over SSH for you). Two ways to authenticate:
+
+```bash
+# (a) with an existing DB user's password:
+# -i is the input file ("-" for stdin); --gzip for a gzipped dump.
+# NOTE: -p here is --mysql-password, NOT project-id (flag collision, Pitfall #27).
+MYSQL_PWD="$TGT_DB_PW" \
+  mw database mysql import <dbId> -i appdb-YYYYMMDD-HHMMSS.sql.gz --gzip -q
+
+# (b) with --temporary-user: the CLI creates a throwaway MySQL user for the
+# import and drops it afterwards — no password needed.
+mw database mysql import <dbId> -i appdb-YYYYMMDD-HHMMSS.sql.gz --gzip --temporary-user -q
+```
+
+> **`--temporary-user` is verified working on `mw 1.18.0`** (import + dump both create and remove the temp user cleanly). An older migration reported it 404ing while fetching the temp user back; that did **not reproduce** — treat it as version-specific. If you hit a 404 on an older CLI, **upgrade `mw`** first, or use path (a) with the existing app/DB user (`mw database mysql user list --database-id <dbId>` for the name). See [`../references/mittwald-surfaces.md`](../references/mittwald-surfaces.md) § "MySQL (managed)".
+
 The managed MySQL DB starts **empty**; no drop/recreate dance is needed. If you've re-run a partial migration, drop the schema objects first:
 
 ```sql
@@ -156,3 +172,4 @@ Compare source vs target.
 - #8 `set -Eeuo pipefail`
 - #13 Verify by counts, not bytes
 - #16 Service name as hostname (container variant)
+- #27 `mw database mysql import` is a mutation (`-q`, no `-o json`); `-i`=input, `-p`=mysql-password (not project-id); `--temporary-user` verified working on 1.18.0

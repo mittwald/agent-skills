@@ -94,8 +94,9 @@ If the token has `api_read` only but the failing call needs to mutate state, **r
 
 ## CLI usage patterns the skill leans on
 
-- `-o json` (or `yaml`/`csv`) for machine-readable output. Parse this, don't grep the human `txt` format.
-- `-q / --quiet` for "just give me the resource ID" — pairs well with `-o json`.
+- `-o json` (or `yaml`/`csv`) for machine-readable output **on read/list commands** — parse this, don't grep the human `txt` format. **Mutation commands don't have `-o json`** (they use `-q`, next bullet), and a few commands reuse `-o` for something else entirely — `mw database mysql dump -o <file>` is the **output file**, not a format. Route the flag by command kind; don't assume `-o json` works everywhere (Pitfall #27).
+- `-q / --quiet` for mutation/action commands (`mw app install`, `mw app exec`, `mw database mysql import`) — "suppress process output, show a machine-readable summary." This is where you read created-resource IDs. Don't expect `-o json` on these.
+- **Flag sets drift across CLI versions.** A command that offered `-o json` in one release may not in another. When a script must survive that drift, probe the installed version's help before committing to a parse path: `mw <cmd> --help 2>&1 | grep -qE '^\s*-o,? *--output'` before parsing JSON, else fall back to `-q` (Pitfall #27).
 - `-w / --wait` + `--wait-timeout=<dur>` to block until a resource is ready (DB, stack rollout). The skill defaults to short timeouts and reports progress.
 - `MITTWALD_API_TOKEN` env over `--token <value>` flag. The flag is logged in shell history.
 - `mw context set --project-id=<id>` — **avoid in agent-run scripts.** It hides which project a command affects and makes resume-after-crash ambiguous. Always pass `-p` explicitly (Pitfall #2).
@@ -144,11 +145,13 @@ Managed engines on mStudio: **MySQL and Redis only**. Everything else → contai
 | Versions (filter `disabled: true`) | `database_mysql_versions` | `mw database mysql versions -o json` | `GET /v2/mysql-versions` |
 | Create DB | `database_mysql_create` | `mw database mysql create ...` | `POST /v2/projects/{projectId}/mysql-databases` |
 | Get / list DBs | `database_mysql_get` / `_list` | `mw database mysql get/list` | `GET /v2/projects/{projectId}/mysql-databases[/{id}]` |
-| **Dump** (streaming) | — (use CLI) | `mw database mysql dump {dbId} > dump.sql` | — (use CLI) |
-| **Import** (streaming) | — (use CLI) | `mw database mysql import {dbId} < dump.sql` | — (use CLI) |
+| **Dump** (streaming) | — (use CLI) | `mw database mysql dump {dbId} -o dump.sql` (`-o -` for stdout; `--gzip`) ⚠ here `-o` is the **output file**, *not* `-o json` | — (use CLI) |
+| **Import** (streaming) | — (use CLI) | `mw database mysql import {dbId} -i dump.sql` (`-i -` for stdin; `--gzip` for gzipped input) ⚠ `-p` here is `--mysql-password`, **not** project-id | — (use CLI) |
 | **Port-forward** | — (use CLI) | `mw database mysql port-forward {dbId} --port 3307` | — (use CLI) |
 | **Interactive shell** | — (use CLI) | `mw database mysql shell {dbId}` | — (use CLI) |
 | User CRUD | `database_mysql_user_*` | `mw database mysql user create/list/get/update/delete` | `…/users…` under the DB path |
+
+> **`--temporary-user` on dump/import — convenient, verified working (1.18.0).** Both `mw database mysql dump` and `import` accept `--temporary-user` to spin up a throwaway MySQL user for the operation and drop it afterwards — no need to know the DB user's password. **Verified end-to-end on `mw 1.18.0`** (import + dump both create and remove the temp user cleanly). One older migration reported the import 404ing while fetching the temp user back; that did **not reproduce** on 1.18.0, so treat it as version-specific. If you hit it on an older CLI, **upgrade `mw`** first, or fall back to the existing app/DB user (`mw database mysql user list --database-id <id>` for the name, password via `-p`/`MYSQL_PWD`). See [`../playbooks/migrate-mysql.md`](../playbooks/migrate-mysql.md) §4a.
 
 ### Redis (managed)
 
