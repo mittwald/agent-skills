@@ -63,7 +63,7 @@ Notes:
 
 - `gzip -6` matches the trade-off used for Postgres dumps. Drop to `-1` for fastest CPU, `-9` for smallest file.
 - `set -Eeuo pipefail` is mandatory (Pitfall #8).
-- If the source DB isn't directly reachable on `$SRC_DB_HOST`, run `mysqldump` **over SSH on the source host** (`ssh source 'mysqldump …' | …`) — and make that SSH non-interactive (password via `sshpass -e`, host key via `-o StrictHostKeyChecking=accept-new`) or it stalls with no TTY (Pitfall #28; [`../references/ssh-modes.md`](../references/ssh-modes.md) § "Source-side SSH access").
+- If the source DB isn't directly reachable on `$SRC_DB_HOST`, run `mysqldump` **over SSH on the source host** (`ssh source 'mysqldump …' | …`) — and make that access non-interactive (e.g. `sshpass -e` for a password, `-o StrictHostKeyChecking=accept-new` for an unknown host key) or an unattended run stalls with no TTY (Pitfall #28; [`../references/ssh-modes.md`](../references/ssh-modes.md) § "Source-side SSH access").
 
 ## 4a. Restore — Mittwald-managed MySQL
 

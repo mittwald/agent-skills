@@ -538,22 +538,10 @@ See [`mittwald-surfaces.md`](mittwald-surfaces.md) § "CLI usage patterns the sk
 
 ---
 
-## #28 — Reaching the SOURCE over SSH: interactive prompts stall non-interactive runs
+## #28 — An interactive SSH prompt on the SOURCE stalls an unattended run
 
-**Symptom.** A pipeline that pulls from the source (`ssh source 'mysqldump …' | …`, `rsync -e ssh source:… …`, `tar … | ssh source …`) hangs forever with no output, or dies with `Host key verification failed`. In an agent-driven or CI run there is no TTY to type a password or accept a host key, so it blocks silently.
+**Symptom.** A dump/copy pipeline that reaches the source over SSH hangs with no output, or dies with `Host key verification failed` — there is no TTY to type a password or accept an unknown host key.
 
-**Why.** The mittwald *target* is always key-based SSH ([`ssh-modes.md`](ssh-modes.md)). The **source is whatever the operator is leaving** — classic shared hosting, a VPS, another hoster — and those very often offer **only password SSH**, or present an unknown host key on first connect. OpenSSH prompts interactively for both; a headless process has nobody to answer, and the pipe deadlocks.
+**Why.** How the source authenticates is the operator's to state, and it varies per source (key, password, agent, jump host). It only becomes a trap when the run is **unattended** (agent/CI) and the source expects an interactive answer — then it blocks silently.
 
-**Fix.** Make source SSH non-interactive *before* piping through it:
-
-- **Password auth** — feed the password via the `SSHPASS` env var, never on the command line (argv is visible in `ps` and shell history):
-
-  ```bash
-  SSHPASS="$SRC_SSH_PW" sshpass -e ssh -o StrictHostKeyChecking=accept-new user@source 'mysqldump …'
-  ```
-
-- **Key auth** — point at the key and skip the prompt: `ssh -i /path/to/key -o StrictHostKeyChecking=accept-new user@source '…'`. Key only in a secret store? Write it to a temp file `chmod 600`, use it, delete it.
-- **Prefer `~/.ssh/config`** when the operator already has the host set up there — then a bare `ssh <alias>` works and no secret touches the pipeline.
-- `StrictHostKeyChecking=accept-new` trusts a *new* host on first sight but still refuses a *changed* key (MITM protection intact). Don't downgrade to `no`.
-
-Full source-vs-target breakdown in [`ssh-modes.md`](ssh-modes.md) § "Source-side SSH access". This is the mirror of Pitfall #3 (the mittwald *target* side).
+**Fix.** Use whatever access the operator gives you and make *that* path non-interactive before streaming through it — don't hardcode one. Common cases: a password → feed it via env, not argv (`SSHPASS=… sshpass -e ssh …`); an unknown host on first connect → `-o StrictHostKeyChecking=accept-new`; otherwise a `~/.ssh/config` host the operator already has. See [`ssh-modes.md`](ssh-modes.md) § "Source-side SSH access".

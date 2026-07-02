@@ -233,23 +233,12 @@ mw ssh-user create -p <projectId> \
 
 If `GET /v2/projects/{id}/ssh-users` returns `[]` and you intend to use Model 2, you haven't created one yet.
 
-## Source-side SSH access (the other end)
+## Source-side SSH access
 
-Everything above is the **mittwald target**, which is always key-based. The **source** you're migrating from is arbitrary — classic shared hosting, a VPS, another hoster — and very often offers **only password SSH**, or presents an unknown host key on first connect. Both prompt interactively and will **stall a non-interactive (agent/CI) run** because there is no TTY to answer them (Pitfall #28). Make source SSH answer-free *before* piping a dump/copy through it:
+The two modes above are the mittwald **target**. The **source** you're leaving is arbitrary, and its SSH auth is the operator's to specify — key, password, agent, jump host, whatever they have. Don't assume one.
 
-- **Prefer `~/.ssh/config`.** If the operator already defined the host there (`Host src`, `HostName`, `User`, `IdentityFile`), a bare `ssh src` resolves everything and no secret touches the pipeline. Try this first.
-- **Password auth** — pass the password via the `SSHPASS` env var, never in argv (argv is visible in `ps` and shell history):
+The only skill-relevant constraint: when the migration runs **unattended**, an interactive prompt on the source (a password, or an unknown host key on first connect) has nobody to answer and hangs the pipeline (Pitfall #28). So take whatever access the operator provides and make *that* non-interactive before streaming a dump/copy through it. Examples, not mandates:
 
-  ```bash
-  SSHPASS="$SRC_SSH_PW" sshpass -e ssh -o StrictHostKeyChecking=accept-new user@source 'mysqldump …'
-  # matching rsync:
-  SSHPASS="$SRC_SSH_PW" sshpass -e rsync -e 'ssh -o StrictHostKeyChecking=accept-new' user@source:/path/ ./local/
-  ```
-
-  `sshpass` isn't always present — `brew install sshpass` / `apt-get install sshpass`.
-- **Key auth** — point at the key and skip the prompt: `ssh -i /path/to/key -o StrictHostKeyChecking=accept-new user@source '…'`. If the key material only lives in a secret store, write it to a temp file `chmod 600`, use it, then delete it.
-- **`StrictHostKeyChecking=accept-new`** trusts a *new* host on first contact but still refuses a *changed* key (MITM protection intact). Use it for first-contact automation; don't downgrade to `no`.
-
-### Pointing the mittwald `mw` SSH commands at a specific key/user
-
-The SSH-tunnelling `mw` subcommands accept `--ssh-identity-file <path>` and `--ssh-user <name>`, or the env vars `MITTWALD_SSH_IDENTITY_FILE` and `MITTWALD_SSH_USER` — verified on `mw 1.19.0` for `mw app exec` and `mw database mysql import`/`dump` (check `--help` for others). Use these in headless/CI runs where the target key isn't the default `~/.ssh/id_*`, instead of editing `~/.ssh/config`.
+- Password → keep it out of argv: `SSHPASS="$SRC_SSH_PW" sshpass -e ssh -o StrictHostKeyChecking=accept-new user@source '…'` (`sshpass` may need installing).
+- Key → `ssh -i <key> -o StrictHostKeyChecking=accept-new user@source '…'`, or a ready `~/.ssh/config` host.
+- `StrictHostKeyChecking=accept-new` trusts a new host on first sight but still refuses a *changed* key — don't downgrade to `no`.

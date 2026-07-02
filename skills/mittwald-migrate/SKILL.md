@@ -58,7 +58,6 @@ This skill is a workflow orchestrator: it routes to focused playbooks under `pla
 - [references/stateful-container-restore.md](references/stateful-container-restore.md) — workaround pattern for pre-loading data into a stopped stateful container (dummy-app + bind-mount). Pitfall #19.
 - [references/pitfalls.md](references/pitfalls.md) — 28 traps from real migrations. **Reference the relevant entry at each step, not as an appendix.**
 - [references/compose-templates/](references/compose-templates/) — ready-to-deploy compose snippets for common shapes.
-- [references/non-interactive.md](references/non-interactive.md) — driving the skill headless (Agent SDK / `claude -p` / CI): pre-supply decisions, auto-answer gates, secrets via env. Read only when a non-human is running the migration.
 
 > Playbooks below are written **MCP-first** for readability. If you're driving via CLI or API, translate via [references/mittwald-surfaces.md](references/mittwald-surfaces.md) — the universal rules (explicit `projectId`, confirmation gates, row-count verification) hold regardless of surface.
 
