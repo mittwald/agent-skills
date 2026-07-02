@@ -99,6 +99,7 @@ If the token has `api_read` only but the failing call needs to mutate state, **r
 - **Flag sets drift across CLI versions.** A command that offered `-o json` in one release may not in another. When a script must survive that drift, probe the installed version's help before committing to a parse path: `mw <cmd> --help 2>&1 | grep -qE '^\s*-o,? *--output'` before parsing JSON, else fall back to `-q` (Pitfall #27).
 - `-w / --wait` + `--wait-timeout=<dur>` to block until a resource is ready (DB, stack rollout). The skill defaults to short timeouts and reports progress.
 - `MITTWALD_API_TOKEN` env over `--token <value>` flag. The flag is logged in shell history.
+- `MITTWALD_SSH_IDENTITY_FILE` / `MITTWALD_SSH_USER` (or `--ssh-identity-file` / `--ssh-user`) pick the key and user for the SSH-tunnelling commands — e.g. `mw app exec` and `mw database mysql import`/`dump` (verified on `mw 1.19.0`). Handy in headless/CI runs where the key isn't the default `~/.ssh/id_*`, instead of editing `~/.ssh/config`. See [`ssh-modes.md`](ssh-modes.md) § "Source-side SSH access".
 - `mw context set --project-id=<id>` — **avoid in agent-run scripts.** It hides which project a command affects and makes resume-after-crash ambiguous. Always pass `-p` explicitly (Pitfall #2).
 - **Positional vs flag inconsistency.** Most `mw` subcommands take the project as `-p / --project-id`, but a few accept it as a **positional argument** and reject `-p`. Known: `mw project ssh <projectId>`, `mw app versions [APP]`. When in doubt, `mw <cmd> --help` is authoritative.
 
