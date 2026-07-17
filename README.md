@@ -53,13 +53,24 @@ Before using either skill:
 /plugin install mittwald-zerodeploy@mittwald-agent-skills
 ```
 
+**For Cursor** — install as a plugin via a team marketplace. A team admin does this once:
+
+1. Open **Dashboard → Plugins**.
+2. Under **Team Marketplaces**, choose **Add Marketplace → Import from Repo**.
+3. Enter `https://github.com/mittwald/agent-skills` and add the **mittwald mStudio Skills** plugin.
+4. Set the access level and save.
+
+Team members then install it from the **Customize** panel. The plugin bundles both skills — Cursor
+discovers them from `skills/` at the repository root — **and wires up the mittwald MCP server**, so
+there is no further setup. Skip "Connecting to Mittwald" below; you're already connected.
+
 **For any other AI assistant** — use the [`skills`](https://www.npmjs.com/package/skills) CLI:
 
 ```bash
 npx skills add mittwald/agent-skills
 ```
 
-This installs the skills into the location your agent expects (e.g. VS Code Copilot, Cursor, and others).
+This installs the skills into the location your agent expects (e.g. VS Code Copilot and others).
 
 **Manual install** (fallback) — clone the repository into your agent's skills directory:
 
@@ -91,7 +102,13 @@ Both skills need **at least one** way to talk to mStudio. You don't have to set 
 
 ### Option 1 — MCP server (best if your AI assistant supports it)
 
-The Mittwald MCP server runs inside your AI session; the skills call its `mcp__mittwald__mittwald_*` tools directly. Setup instructions: **[AI-assisted development guide](https://developer.mittwald.de/docs/v2/platform/development/ai-coding/)**.
+The Mittwald MCP server runs inside your AI session; the skills call its `mcp__mittwald__mittwald_*` tools directly.
+
+**In Cursor, this is already done for you.** The plugin ships the server config, so installing it
+connects `https://mcp.mittwald.de/mcp` with no JSON to edit and no token to paste — Cursor runs the
+OAuth flow in your browser the first time a skill reaches for it.
+
+For other assistants, set it up by hand: **[AI-assisted development guide](https://developer.mittwald.de/docs/v2/platform/development/ai-coding/)**.
 
 ### Option 2 — `mw` CLI (best for terminal workflows)
 
@@ -139,6 +156,14 @@ Details: [`skills/mittwald-migrate/references/ssh-modes.md`](skills/mittwald-mig
 
 ```
 agent-skills/
+├── .claude-plugin/                # Claude Code: marketplace listing both plugins
+│   └── marketplace.json
+├── .cursor-plugin/                # Cursor: marketplace + the plugin manifest itself
+│   ├── marketplace.json
+│   └── plugin.json
+├── assets/
+│   └── logo.svg                   # mittwald icon, shown on the Cursor marketplace tile
+├── mcp.json                       # mittwald MCP server, auto-wired on Cursor plugin install
 ├── skills/
 │   ├── mittwald-migrate/          # Migration skill
 │   │   ├── SKILL.md               # Workflow index
