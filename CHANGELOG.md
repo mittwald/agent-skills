@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bundled mittwald MCP server (`mcp.json`) in the Cursor plugin. Installing the plugin now connects
   `https://mcp.mittwald.de/mcp` via OAuth — no config file to edit, no API token to paste — which
   puts both skills on their preferred MCP surface immediately. This makes the plugin a replacement
-  for the manual Cursor MCP setup guide rather than a pointer to it.
+  for the manual Cursor MCP setup guide rather than a pointer to it. Verified end-to-end against a
+  real Cursor install: the server reaches `needsAuth`, and Cursor registers itself via Dynamic
+  Client Registration, so no hardcoded OAuth client ID is needed.
 - Consolidated repository structure with both mittwald-migrate and mittwald-zerodeploy-skill
 - Unified README.md covering both skills
 - DEVELOPING.md with contribution guidelines and repository conventions

@@ -72,8 +72,15 @@ Two things about it are load-bearing; don't change them casually:
   and both skills detect their preferred surface by probing for `mcp__mittwald__mittwald_*`
   (see `references/mittwald-surfaces.md`). Renaming the key silently drops every skill to its
   CLI/API fallback.
-- **`url` alone, no `headers`.** That is what triggers Cursor's OAuth 2.1 + PKCE flow, so no token
-  is ever written to a file in this repo. mittwald also accepts a
+- **`url` alone — no `headers`, no `auth` block.** That is what triggers Cursor's OAuth 2.1 + PKCE
+  flow, so no token is ever written to a file in this repo. This is **verified**, not assumed: on a
+  real install Cursor reaches `statusType=needsAuth`, offers the authenticate action, and completes
+  the flow. It works because `auth.mcp.mittwald.de` advertises a `registration_endpoint`, so Cursor
+  registers itself via Dynamic Client Registration and needs no pre-issued client ID.
+
+  Some Cursor plugins (e.g. the official Slack one) hardcode `auth: { CLIENT_ID: "…" }`. **We
+  deliberately don't**, and don't need to — mittwald supports DCR, so there is no Cursor-specific
+  OAuth client to register or keep in sync. mittwald also accepts a
   `"Authorization": "Bearer ${env:MITTWALD_API_TOKEN}"` header for headless/CI use, but hardcoding
   that here would force a token on interactive users and break the OAuth path when the env var is
   unset. Users who need it can add the header in their own `~/.cursor/mcp.json`.
@@ -221,6 +228,43 @@ been done yet.
    - Missing prerequisites
    - API errors
    - Network issues
+
+### Testing the Cursor plugin locally
+
+Cursor installs a plugin from a **git commit, not from your working directory** — even when the
+marketplace source is a local path. At import it resolves the repo to a commit SHA, pins it in its
+backend marketplace record, and clones *that commit* into
+`~/.cursor/plugins/cache/<marketplace>/<plugin>/<sha>/`.
+
+Consequences, in the order they will bite you:
+
+1. **Uncommitted or branch-only changes are invisible.** Commit before importing, and import from
+   the branch you want to test.
+2. **The pin does not follow your branch.** Merging into `master` afterwards changes nothing; Cursor
+   keeps loading the pinned SHA. Reloading the window and disabling/re-enabling the plugin don't
+   clear it either.
+3. **To re-pin, remove the whole marketplace** in Dashboard → Plugins and re-add it, so the SHA is
+   resolved again.
+
+The confusing part is that the plugin *listing* is read live from your repo while its *contents*
+come from the pinned clone. A component you just added shows up in the UI but does nothing — which
+looks exactly like a broken component rather than a stale checkout.
+
+Verify what Cursor actually loaded before debugging anything else:
+
+```bash
+# What commit is pinned, and does that checkout contain what you expect?
+ls ~/.cursor/plugins/cache/mittwald-agent-skills/mittwald-agent-skills/
+
+# Did the MCP server get a client? Look for statusType=needsAuth, then connected.
+grep -i mittwald ~/Library/Application\ Support/Cursor/logs/*/window*/workbench.mcp.*.log | tail
+
+# Which commit/source Cursor resolved (macOS path):
+grep -i "mittwald" ~/Library/Application\ Support/Cursor/logs/*/window*/exthost/anysphere.cursor-agent-exec/Cursor\ Plugins*.log | tail
+```
+
+No `plugin-mittwald-agent-skills-mittwald` client in those logs means the server was never loaded —
+check the pinned commit first. It does **not** mean OAuth failed.
 
 ### Testing with Different AI Assistants
 
