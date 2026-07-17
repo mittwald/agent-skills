@@ -1,6 +1,6 @@
 ---
 name: mittwald-migrate
-description: Guides a conversational, phase-by-phase migration of an arbitrary application to Mittwald mStudio. Use when the user mentions "migrate to Mittwald", "Umzug nach Mittwald", "move to mStudio", "Container Hosting auf Mittwald", "stack_deploy", or asks for help moving a workload (K8s, Docker Compose, VPS, another hoster, another mStudio project) onto Mittwald. Source is open, target is always mStudio.
+description: Migrate an arbitrary application from an external platform to mittwald mStudio. Use when the user mentions "migrate to Mittwald", "Umzug nach Mittwald", "move to mStudio", "Container Hosting auf Mittwald", "stack_deploy", or asks for help moving a workload (K8s, Docker Compose, VPS, another hoster, another mStudio project) onto Mittwald. Source is open, target is always mStudio.
 ---
 
 # mittwald-migrate
