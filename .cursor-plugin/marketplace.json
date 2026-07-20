@@ -1,7 +1,8 @@
 {
   "name": "mittwald-agent-skills",
   "owner": {
-    "name": "Mittwald CM Service GmbH & Co. KG"
+    "name": "mittwald",
+    "email": "opensource@mittwald.de"
   },
   "metadata": {
     "description": "mittwald skills for migrating to and deploying on mStudio.",
