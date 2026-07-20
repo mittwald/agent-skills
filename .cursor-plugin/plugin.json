@@ -1,0 +1,21 @@
+{
+  "name": "mittwald-agent-skills",
+  "displayName": "mittwald mStudio Skills",
+  "description": "Various workflows for deploying, running or migrating your projects on mittwald mStudio.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Mittwald CM Service GmbH & Co. KG"
+  },
+  "homepage": "https://github.com/mittwald/agent-skills",
+  "repository": "https://github.com/mittwald/agent-skills",
+  "license": "MIT",
+  "logo": "assets/logo.svg",
+  "keywords": [
+    "mittwald",
+    "mstudio",
+    "hosting",
+    "migration",
+    "deployment",
+    "railpack"
+  ]
+}

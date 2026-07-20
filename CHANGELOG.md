@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Cursor plugin packaging: `.cursor-plugin/plugin.json` and `.cursor-plugin/marketplace.json`
+  publish the repository as the **mittwald mStudio Skills** plugin, installable via
+  Cursor's *Add Marketplace → Import from Repo*. Cursor discovers both skills from `skills/`
+  at the repository root; no files moved. See "Plugin packaging" in DEVELOPING.md for why
+  Cursor gets one bundled plugin while Claude Code gets two.
+- `assets/logo.svg` (mittwald icon, negative on navy) for the Cursor marketplace listing.
+- Bundled mittwald MCP server (`mcp.json`) in the Cursor plugin. Installing the plugin now connects
+  `https://mcp.mittwald.de/mcp` via OAuth — no config file to edit, no API token to paste — which
+  puts both skills on their preferred MCP surface immediately. This makes the plugin a replacement
+  for the manual Cursor MCP setup guide rather than a pointer to it. Verified end-to-end against a
+  real Cursor install: the server reaches `needsAuth`, and Cursor registers itself via Dynamic
+  Client Registration, so no hardcoded OAuth client ID is needed.
 - Consolidated repository structure with both mittwald-migrate and mittwald-zerodeploy-skill
 - Unified README.md covering both skills
 - DEVELOPING.md with contribution guidelines and repository conventions

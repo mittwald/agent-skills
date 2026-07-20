@@ -1,0 +1,17 @@
+{
+  "name": "mittwald-agent-skills",
+  "owner": {
+    "name": "Mittwald CM Service GmbH & Co. KG"
+  },
+  "metadata": {
+    "description": "mittwald skills for migrating to and deploying on mStudio.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "mittwald-agent-skills",
+      "source": ".",
+      "description": "Bundles the mittwald-migrate and mittwald-zerodeploy skills. Cursor discovers both from skills/ at the repository root."
+    }
+  ]
+}

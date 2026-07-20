@@ -10,13 +10,25 @@ This document explains how to work on the skills themselves — structure, conve
 
 ```
 agent-skills/
+├── .claude-plugin/             # Claude Code marketplace (see "Plugin packaging")
+│   └── marketplace.json
+├── .cursor-plugin/             # Cursor marketplace + plugin manifest
+│   ├── marketplace.json
+│   └── plugin.json
+├── assets/
+│   └── logo.svg                # mittwald icon (negative/navy), for the Cursor marketplace
+├── mcp.json                    # mittwald MCP server, bundled into the Cursor plugin
 ├── skills/                     # Individual skill directories
 │   ├── mittwald-migrate/       # Migration skill
 │   │   ├── SKILL.md            # Main entry point (< 200 lines)
+│   │   ├── .claude-plugin/     # Makes this dir a standalone Claude plugin
+│   │   │   └── plugin.json
 │   │   ├── playbooks/          # Step-by-step executable guides
 │   │   └── references/         # Background knowledge docs
 │   └── mittwald-zerodeploy/  # Deployment skill
 │       ├── SKILL.md
+│       ├── .claude-plugin/
+│       │   └── plugin.json
 │       ├── playbooks/
 │       └── references/
 ├── README.md                   # User-facing documentation
@@ -25,6 +37,57 @@ agent-skills/
 ├── LICENSE                     # MIT license
 └── example.env                 # API token template
 ```
+
+### Plugin packaging
+
+The same skills ship to Claude Code and Cursor, but the two platforms package them
+**differently** — and the asymmetry is deliberate, not an oversight.
+
+| | Claude Code | Cursor |
+|---|---|---|
+| Plugins published | Two (`mittwald-migrate`, `mittwald-zerodeploy`) | One (`mittwald-agent-skills`) bundling both skills |
+| Plugin root | Each skill directory | The repository root |
+| Manifest | `skills/<name>/.claude-plugin/plugin.json` | `.cursor-plugin/plugin.json` |
+| How skills are found | Claude accepts **a single `SKILL.md` at the plugin root** | Cursor only scans a `skills/` directory |
+
+Cursor has no equivalent of Claude's root-`SKILL.md` fallback, so a per-skill Cursor plugin
+would need its own nested `skills/<name>/SKILL.md` — which would mean either duplicating every
+skill or moving them out of `skills/` and breaking `npx skills add`, the README links, and
+`validate-skills.sh`. Pointing one Cursor plugin at the repo root avoids all of that: the
+existing `skills/` layout *is* Cursor's documented default, so both skills are discovered with
+no files moved.
+
+The trade-off: Cursor users install one plugin and get both skills; they can't take just one.
+
+#### Bundled MCP server (Cursor)
+
+`mcp.json` at the repository root is auto-discovered by Cursor and connects the mittwald MCP server
+on install. It exists so the Cursor plugin **replaces** the manual
+[MCP setup guide](https://developer.mittwald.de/docs/v2/agentic-integration/mcp/getting-connected/cursor/)
+rather than pointing at it — installing the plugin is the whole setup.
+
+Two things about it are load-bearing; don't change them casually:
+
+- **The server key must stay `mittwald`.** Cursor exposes MCP tools as `mcp__<serverKey>__<tool>`,
+  and both skills detect their preferred surface by probing for `mcp__mittwald__mittwald_*`
+  (see `references/mittwald-surfaces.md`). Renaming the key silently drops every skill to its
+  CLI/API fallback.
+- **`url` alone — no `headers`, no `auth` block.** That is what triggers Cursor's OAuth 2.1 + PKCE
+  flow, so no token is ever written to a file in this repo. This is **verified**, not assumed: on a
+  real install Cursor reaches `statusType=needsAuth`, offers the authenticate action, and completes
+  the flow. It works because `auth.mcp.mittwald.de` advertises a `registration_endpoint`, so Cursor
+  registers itself via Dynamic Client Registration and needs no pre-issued client ID.
+
+  Some Cursor plugins (e.g. the official Slack one) hardcode `auth: { CLIENT_ID: "…" }`. **We
+  deliberately don't**, and don't need to — mittwald supports DCR, so there is no Cursor-specific
+  OAuth client to register or keep in sync. mittwald also accepts a
+  `"Authorization": "Bearer ${env:MITTWALD_API_TOKEN}"` header for headless/CI use, but hardcoding
+  that here would force a token on interactive users and break the OAuth path when the env var is
+  unset. Users who need it can add the header in their own `~/.cursor/mcp.json`.
+
+Only Cursor gets the bundled server today. Claude Code plugins can ship MCP servers too (via
+`.mcp.json` or an `mcpServers` field), so the same treatment is possible there — it just hasn't
+been done yet.
 
 ### Design Principles
 
@@ -123,12 +186,18 @@ agent-skills/
 ### Adding a New Skill
 
 1. Create `skills/<skill-name>/` directory
-2. Create `SKILL.md` with triggers and workflow
+2. Create `SKILL.md` with triggers and workflow (frontmatter `name:` must match the directory)
 3. Create `playbooks/` and `references/` subdirectories
 4. Populate with content following conventions above
 5. Add section to main `README.md`
 6. Add symlink instructions to `README.md`
-7. Test installation and triggering
+7. Publish it to both plugin systems (see [Plugin packaging](#plugin-packaging)):
+   - **Claude Code**: add `skills/<skill-name>/.claude-plugin/plugin.json` and append an entry
+     to `.claude-plugin/marketplace.json`.
+   - **Cursor**: nothing to do — the root plugin discovers any new `skills/*/SKILL.md`
+     automatically. Cursor admins must re-import the repository URL to pick it up, though;
+     auto-refresh does not surface newly added plugins.
+8. Test installation and triggering
 
 ---
 
@@ -159,6 +228,43 @@ agent-skills/
    - Missing prerequisites
    - API errors
    - Network issues
+
+### Testing the Cursor plugin locally
+
+Cursor installs a plugin from a **git commit, not from your working directory** — even when the
+marketplace source is a local path. At import it resolves the repo to a commit SHA, pins it in its
+backend marketplace record, and clones *that commit* into
+`~/.cursor/plugins/cache/<marketplace>/<plugin>/<sha>/`.
+
+Consequences, in the order they will bite you:
+
+1. **Uncommitted or branch-only changes are invisible.** Commit before importing, and import from
+   the branch you want to test.
+2. **The pin does not follow your branch.** Merging into `master` afterwards changes nothing; Cursor
+   keeps loading the pinned SHA. Reloading the window and disabling/re-enabling the plugin don't
+   clear it either.
+3. **To re-pin, remove the whole marketplace** in Dashboard → Plugins and re-add it, so the SHA is
+   resolved again.
+
+The confusing part is that the plugin *listing* is read live from your repo while its *contents*
+come from the pinned clone. A component you just added shows up in the UI but does nothing — which
+looks exactly like a broken component rather than a stale checkout.
+
+Verify what Cursor actually loaded before debugging anything else:
+
+```bash
+# What commit is pinned, and does that checkout contain what you expect?
+ls ~/.cursor/plugins/cache/mittwald-agent-skills/mittwald-agent-skills/
+
+# Did the MCP server get a client? Look for statusType=needsAuth, then connected.
+grep -i mittwald ~/Library/Application\ Support/Cursor/logs/*/window*/workbench.mcp.*.log | tail
+
+# Which commit/source Cursor resolved (macOS path):
+grep -i "mittwald" ~/Library/Application\ Support/Cursor/logs/*/window*/exthost/anysphere.cursor-agent-exec/Cursor\ Plugins*.log | tail
+```
+
+No `plugin-mittwald-agent-skills-mittwald` client in those logs means the server was never loaded —
+check the pinned commit first. It does **not** mean OAuth failed.
 
 ### Testing with Different AI Assistants
 
@@ -207,6 +313,17 @@ lychee --offline --no-progress .         # must report 0 errors
 # 3. SKILL.md conventions: frontmatter present, name matches directory, < 200 lines.
 bash scripts/validate-skills.sh
 ```
+
+If you touched either plugin manifest, also run Cursor's own validator against the repo root.
+It is not vendored here (and not part of CI) because the manifests are static; fetch it on demand:
+
+```bash
+git clone --depth 1 https://github.com/cursor/plugin-template /tmp/cursor-plugin-template
+node /tmp/cursor-plugin-template/scripts/validate-template.mjs   # run from the repo root
+```
+
+It should report `Validation passed`. The two warnings about a missing `hooks/hooks.json` and
+`mcp.json` are expected — this plugin ships neither.
 
 **Keep mechanical formatting in its own commit.** When `--fix` reformats files,
 commit that reformat separately (e.g. `style: apply markdownlint auto-fixes`) from
