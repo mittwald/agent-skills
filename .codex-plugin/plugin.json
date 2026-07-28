@@ -1,0 +1,41 @@
+{
+  "name": "mittwald-agent-skills",
+  "version": "1.0.0",
+  "description": "Various workflows for deploying, running or migrating your projects on mittwald mStudio.",
+  "author": {
+    "name": "mittwald",
+    "email": "opensource@mittwald.de",
+    "url": "https://www.mittwald.de"
+  },
+  "homepage": "https://github.com/mittwald/agent-skills",
+  "repository": "https://github.com/mittwald/agent-skills",
+  "license": "MIT",
+  "keywords": [
+    "mittwald",
+    "mstudio",
+    "hosting",
+    "migration",
+    "deployment",
+    "railpack"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./mcp.json",
+  "interface": {
+    "displayName": "mittwald mStudio Skills",
+    "shortDescription": "Deploy and migrate projects to mittwald mStudio",
+    "longDescription": "Bundles the mittwald-migrate and mittwald-zerodeploy skills together with the hosted mittwald MCP server. mittwald-migrate guides a conversational, phase-by-phase migration of an application from Kubernetes, Docker Compose, a VPS or another hoster to mittwald mStudio. mittwald-zerodeploy performs zero-config deployments to mStudio container hosting using Railpack build inference.",
+    "developerName": "mittwald CM Service GmbH & Co. KG",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://www.mittwald.de",
+    "privacyPolicyURL": "https://www.mittwald.de/datenschutz",
+    "termsOfServiceURL": "https://www.mittwald.de/agb",
+    "defaultPrompt": [
+      "Deploy this repository to mittwald mStudio.",
+      "Migrate my Docker Compose stack to mittwald mStudio."
+    ],
+    "brandColor": "#1d295c",
+    "composerIcon": "./assets/logo.png",
+    "logo": "./assets/logo.png"
+  }
+}
