@@ -486,3 +486,62 @@ If multisite, re-plan: provision all virtualhosts (one per domain), recompute DB
   The `phase` enum is `pending`, `installing`, `upgrading`, `ready`, `disabled`, `reconfiguring`. Loop until `ready`. Narrate the wait to the operator rather than blocking silently.
 
 Only after `phase == "ready"` do you: establish SSH access (own studio user or per-project `ssh_user_create`), write php.ini overrides, land dumps, or run any migration step. The same applies after `app_upgrade` (transient `upgrading` phase). See [`../playbooks/provision-target.md`](../playbooks/provision-target.md) §3a and [`ssh-modes.md`](ssh-modes.md).
+
+---
+
+## #26 — `mw app exec` takes a single COMMAND string — wrap complex commands in `bash -c`
+
+**Symptom.** `mw app exec` "loses" everything after the first word, mangles pipes/redirects/`&&`, or a multi-step command runs only its first token. Piping a `tar` stream in seems to work but chained shell logic doesn't.
+
+**Why.** `mw app exec` is defined as `mw app exec COMMAND [flags]` — `COMMAND` is a **single positional argument** run on the far side, not a shell line. Pipelines, redirects, `&&`/`;`, and env-var expansion aren't interpreted unless a shell interprets them **inside** that one argument. The help text names the argument but doesn't show a multi-step example, so it's easy to assume shell semantics that aren't there.
+
+**Fix.** Wrap anything beyond a single simple command in `bash -c '…'` so a shell runs it remotely, and quote the whole thing as one argument:
+
+```bash
+# single command — fine as-is
+mw app exec -i <a-XXXXX> -q "php -v"
+
+# anything with pipes / redirects / chaining — wrap it
+mw app exec -i <a-XXXXX> -q "bash -c 'cd public && ./vendor/bin/typo3 cache:flush && echo done'"
+
+# stdin streaming (file migration) — extract to the app dir via a wrapped tar
+tar -C "$(dirname "$SRC")" -cf - "$(basename "$SRC")" \
+  | mw app exec -i <a-XXXXX> -q "bash -c 'tar -C /html -xf -'"
+```
+
+`mw app exec` is a convenient alternative to hand-assembling a Project-Host-SSH address (it resolves the app's SSH target for you); the `bash -c` rule is the only sharp edge. See [`../playbooks/migrate-files.md`](../playbooks/migrate-files.md) §1.
+
+---
+
+## #27 — `mw` output flags aren't uniform (`-o json` on reads, `-q` on mutations)
+
+**Symptom.** A script parses `mw <cmd> -o json` and the command errors with "unknown flag", or emits human-readable text instead of JSON. Conversely `-q` is assumed everywhere and a read command ignores it. And a short flag can mean different things on different commands: `-o` is the output *format* on reads but the output *file* on `mw database mysql dump`; `-i` is `--installation-id` on `mw app exec` but `--input` on `mw database mysql import`/`dump`.
+
+**Why.** The flag set splits by command kind:
+
+- **Read / list commands** (`mw app get`, `mw project list`, `mw database mysql versions`, …) support `-o json|yaml|csv` for machine-readable output.
+- **Action / mutation commands** (`mw app install …`, `mw database mysql import …`, `mw app exec …`) support only `-q / --quiet` — "suppress process output, show a machine-readable summary." They have **no `-o json`**.
+- Flag availability **drifts across CLI versions** — a command that took `-o json` in one release may not in another, and vice versa. Treat `--help` for the version actually installed as authoritative, not a doc written against an older `mw`.
+
+**Fix.** Route by command kind: parse **`-o json`** on reads, expect **`-q`** summaries on mutations. Don't assume one flag works everywhere. When a script must be robust across CLI versions, probe once before committing to a parse path:
+
+```bash
+# does this command actually offer -o json?
+if mw <cmd> --help 2>&1 | grep -qE '^\s*-o,? *--output'; then
+  out="$(mw <cmd> … -o json)"     # parse JSON
+else
+  out="$(mw <cmd> … -q)"          # parse the -q summary
+fi
+```
+
+See [`mittwald-surfaces.md`](mittwald-surfaces.md) § "CLI usage patterns the skill leans on".
+
+---
+
+## #28 — An interactive SSH prompt on the SOURCE stalls an unattended run
+
+**Symptom.** A dump/copy pipeline that reaches the source over SSH hangs with no output, or dies with `Host key verification failed` — there is no TTY to type a password or accept an unknown host key.
+
+**Why.** How the source authenticates is the operator's to state, and it varies per source (key, password, agent, jump host). It only becomes a trap when the run is **unattended** (agent/CI) and the source expects an interactive answer — then it blocks silently.
+
+**Fix.** Use whatever access the operator gives you and make *that* path non-interactive before streaming through it — don't hardcode one. Common cases: a password → feed it via env, not argv (`SSHPASS=… sshpass -e ssh …`); an unknown host on first connect → `-o StrictHostKeyChecking=accept-new`; otherwise a `~/.ssh/config` host the operator already has. See [`ssh-modes.md`](ssh-modes.md) § "Source-side SSH access".

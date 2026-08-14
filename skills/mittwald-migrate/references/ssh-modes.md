@@ -232,3 +232,13 @@ mw ssh-user create -p <projectId> \
 ```
 
 If `GET /v2/projects/{id}/ssh-users` returns `[]` and you intend to use Model 2, you haven't created one yet.
+
+## Source-side SSH access
+
+The two modes above are the mittwald **target**. The **source** you're leaving is arbitrary, and its SSH auth is the operator's to specify — key, password, agent, jump host, whatever they have. Don't assume one.
+
+The only skill-relevant constraint: when the migration runs **unattended**, an interactive prompt on the source (a password, or an unknown host key on first connect) has nobody to answer and hangs the pipeline (Pitfall #28). So take whatever access the operator provides and make *that* non-interactive before streaming a dump/copy through it. Examples, not mandates:
+
+- Password → keep it out of argv: `SSHPASS="$SRC_SSH_PW" sshpass -e ssh -o StrictHostKeyChecking=accept-new user@source '…'` (`sshpass` may need installing).
+- Key → `ssh -i <key> -o StrictHostKeyChecking=accept-new user@source '…'`, or a ready `~/.ssh/config` host.
+- `StrictHostKeyChecking=accept-new` trusts a new host on first sight but still refuses a *changed* key — don't downgrade to `no`.

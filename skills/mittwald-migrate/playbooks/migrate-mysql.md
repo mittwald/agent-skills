@@ -63,6 +63,7 @@ Notes:
 
 - `gzip -6` matches the trade-off used for Postgres dumps. Drop to `-1` for fastest CPU, `-9` for smallest file.
 - `set -Eeuo pipefail` is mandatory (Pitfall #8).
+- If the source DB isn't directly reachable on `$SRC_DB_HOST`, run `mysqldump` **over SSH on the source host** (`ssh source 'mysqldump …' | …`) — and make that access non-interactive (e.g. `sshpass -e` for a password, `-o StrictHostKeyChecking=accept-new` for an unknown host key) or an unattended run stalls with no TTY (Pitfall #28; [`../references/ssh-modes.md`](../references/ssh-modes.md) § "Source-side SSH access").
 
 ## 4a. Restore — Mittwald-managed MySQL
 
@@ -76,6 +77,22 @@ MYSQL_PWD="$TGT_DB_PW" \
 ```
 
 If the dump lives on the project host: SSH there first (Project-Host-SSH, Pitfall #3) and run from there.
+
+**Native CLI alternative — `mw database mysql import`.** Instead of a raw `mysql` client, the CLI imports directly (it tunnels over SSH for you). Two ways to authenticate:
+
+```bash
+# (a) with an existing DB user's password:
+# -i is the input file ("-" for stdin); --gzip for a gzipped dump.
+# NOTE: -p here is --mysql-password, NOT project-id (flag collision, Pitfall #27).
+MYSQL_PWD="$TGT_DB_PW" \
+  mw database mysql import <dbId> -i appdb-YYYYMMDD-HHMMSS.sql.gz --gzip -q
+
+# (b) with --temporary-user: the CLI creates a throwaway MySQL user for the
+# import and drops it afterwards — no password needed.
+mw database mysql import <dbId> -i appdb-YYYYMMDD-HHMMSS.sql.gz --gzip --temporary-user -q
+```
+
+> **`--temporary-user` is verified working on `mw 1.18.0`** (import + dump both create and remove the temp user cleanly). An older migration reported it 404ing while fetching the temp user back; that did **not reproduce** — treat it as version-specific. If you hit a 404 on an older CLI, **upgrade `mw`** first, or use path (a) with the existing app/DB user (`mw database mysql user list --database-id <dbId>` for the name). See [`../references/mittwald-surfaces.md`](../references/mittwald-surfaces.md) § "MySQL (managed)".
 
 The managed MySQL DB starts **empty**; no drop/recreate dance is needed. If you've re-run a partial migration, drop the schema objects first:
 
@@ -156,3 +173,5 @@ Compare source vs target.
 - #8 `set -Eeuo pipefail`
 - #13 Verify by counts, not bytes
 - #16 Service name as hostname (container variant)
+- #27 `mw database mysql import` is a mutation (`-q`, no `-o json`); `-i`=input, `-p`=mysql-password (not project-id); `--temporary-user` verified working on 1.18.0
+- #28 Source DB reached via SSH → make that SSH non-interactive (`sshpass -e`, `accept-new`) or the dump stalls

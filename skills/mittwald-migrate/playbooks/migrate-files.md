@@ -44,6 +44,16 @@ Notes:
 - Uses `tar`'s `-C` to set working directory both ends — preserves the intended top-level dir name.
 - Add `| pv -s "$(du -sb "$SRC_PATH" | awk '{print $1}')" |` between tars for a progress bar (Pitfall #9, optional).
 - Compression usually isn't worth it for already-compressed media (JPEG/MP4). If the data is text-heavy, add `| zstd -3 |` and the inverse on receive — but then plan for double the CPU window.
+- **If you're not *on* the source** (pulling over SSH from a remote host), make the operator's source access non-interactive first — e.g. `sshpass -e` for a password, `-o StrictHostKeyChecking=accept-new` for an unknown host key — or an unattended pipeline stalls on a prompt with no TTY (Pitfall #28; [`../references/ssh-modes.md`](../references/ssh-modes.md) § "Source-side SSH access").
+
+**Alternative to hand-assembling the SSH address: `mw app exec`.** For an **app** target you can stream into the app dir via `mw app exec` instead of composing the `user@account@a-XXXXX@ssh.…` string yourself — the CLI resolves the app's SSH target. The one sharp edge (Pitfall #26): `mw app exec COMMAND` runs a **single positional argument**, so wrap anything with pipes/redirects in `bash -c`:
+
+```bash
+tar -C "$(dirname "$SRC_PATH")" -cf - "$(basename "$SRC_PATH")" \
+  | mw app exec -i <a-XXXXX> -q "bash -c 'tar -C /html -xf -'"
+```
+
+`-q` suppresses the CLI's own chatter so it doesn't corrupt the stream (this is a mutation command — it has no `-o json`, Pitfall #27).
 
 **Source is in Kubernetes** (volume mounted in a pod):
 
@@ -148,3 +158,6 @@ If the migrated app is a common CMS (WordPress, TYPO3, Shopware), clear its cach
 - #19 Stateful containers that need offline pre-load — see `stateful-container-restore.md`
 - #20 Rootless container: pre-create + chmod the bind-mount before first start; tighten with chown via Container-SSH afterwards
 - #23 WordPress cache plugins — clear caches via the plugin's own UI/CLI after URL-rewrite
+- #26 `mw app exec COMMAND` is a single string — wrap piped/chained commands in `bash -c`
+- #27 `mw app exec` is a mutation command — `-q` (no `-o json`); `-q` also keeps CLI chatter out of the tar stream
+- #28 Source SSH must be non-interactive (password via `sshpass -e`, host key via `accept-new`) or a remote pull stalls
