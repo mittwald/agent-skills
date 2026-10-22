@@ -2,6 +2,8 @@
 
 **Goal**: Deploy the application from the user's local machine using `mw experimental deploy` to validate the build before setting up automation.
 
+**Prerequisite**: The target project was explicitly confirmed by the user in `01-provision-target.md`. Do not continue without that confirmation.
+
 ---
 
 ## Pre-flight Checks
@@ -25,7 +27,7 @@ Look for indicators of a web project:
 
 ### 2. Check for existing Dockerfile
 
-**CRITICAL**: Check if a Dockerfile exists:
+Check if a Dockerfile exists:
 
 ```bash
 ls -la Dockerfile docker-compose.yml
@@ -33,32 +35,91 @@ ls -la Dockerfile docker-compose.yml
 
 **If a Dockerfile exists**:
 
-- ⚠️ This bypasses Railpack and may cause issues (especially if AI-generated)
-- If deployment fails, **delete the Dockerfile and retry**
-- See `references/pitfalls.md` for details
+- It is used as-is and Railpack is skipped
+- Note the `EXPOSE` port(s) and the port the app listens on (e.g. `ENV PORT=3000`). If the exposed port is not `80`, you **must** pass `--env PORT=<exposed port>` (see [Port handling](#port-handling))
+- Don't delete a Dockerfile up front. Only consider deleting it if the **build** fails because of it (see `references/pitfalls.md`)
+
+### 3. Choose names (don't rely on the defaults)
+
+`--uri-prefix`, `--service-name` and `--image-name` decide whether a deploy **updates** an existing deployment or creates a **new** one next to it. So first find out whether this app is already deployed in the target project.
+
+#### 3a. Look for an existing deployment of this app
+
+List what runs in the target project (you may already have this from `01-provision-target.md`, Step 3c):
+
+- `mittwald_container_list` / `mw container list --project-id <id>`: service names and their images
+- `mittwald_domain_virtualhost_list` / `mw domain virtualhost list --project-id <id>`: hostnames and the container each one targets
+
+A service belongs to this app if, for example, its name or image name matches the app's name (see 3b), or a hostname named after the app targets it. Earlier deploys may also have used the CLI defaults (`app-<project-id>`, `app-image`, `webapp`).
+
+**If you find a previous deployment of this app**, reuse its values, even if they don't match the naming scheme below:
+
+| Flag | Take it from |
+|---|---|
+| `--service-name` | The existing service's name |
+| `--image-name` | The image name of that service, without registry host and tag (`registry.p-xxxxxx.project.space/my-app:latest` → `my-app`) |
+| `--uri-prefix` | The `*.<short-id>.project.space` hostname targeting that service, without the suffix (`my-app.p-xxxxxx.project.space` → `my-app`) |
+
+Picking new names instead would leave the old service and hostname running next to the new deployment.
+
+**If the match is not clear** (several candidates, or a service you can't attribute to this app), show the user what you found and ask. Don't guess, since a wrong guess replaces someone else's service.
+
+**If no `*.project.space` hostname targets the service** (e.g. only a custom domain), ask the user which `--uri-prefix` to use. The deploy always creates or reuses a `<uri-prefix>.<short-id>.project.space` hostname.
+
+#### 3b. Otherwise: derive names for a first deployment
+
+Derive **one** name from the application and use it for all three naming flags:
+
+- Source, in this order: `name` in `package.json` / `pyproject.toml` / `composer.json`, the Go module's last path segment, else the directory name
+- Normalize: lowercase, only `a-z`, `0-9` and `-` (e.g. `@acme/Works_On_My_Machine` → `works-on-my-machine`)
+
+| Flag | CLI default | Risk of the default |
+|---|---|---|
+| `--uri-prefix` | `webapp` | If `webapp.<short-id>.project.space` already exists in the project, the CLI prints `Reusing existing domain…` and **points that hostname at your container** |
+| `--service-name` | `app-<project-id>` | Every unnamed deploy into the project replaces the same service |
+| `--image-name` | `app-image` | Every unnamed deploy overwrites the same image tag in the project registry |
+
+Make sure the derived name isn't already used by a different workload in the project (service name or hostname, from the lists in 3a).
 
 ---
 
-## Basic Deployment (No Environment Variables)
+## Deploy
 
-### Minimal command
+### Command
 
 ```bash
-mw experimental deploy
+mw experimental deploy \
+  --project-id p-xxxxxx \
+  --uri-prefix my-app \
+  --service-name my-app \
+  --image-name my-app
 ```
 
-**Flags explained**:
+Add `--env PORT=<port>` when the Dockerfile exposes a port other than `80` (see next section).
 
-- If project ID not set as default: add `--project-id p-xxxxxx`
+### Port handling
 
-### Expected output
+`mw experimental deploy` (CLI 1.25.0) decides the ports like this:
+
+- **Ingress target port**: `--env PORT` if given, else the first `EXPOSE` port of the Dockerfile, else `80` (always `80` for Railpack builds)
+- **Container environment**: the CLI **always sets `PORT=80`** unless you pass `--env PORT=...`. This overrides an `ENV PORT=...` in the Dockerfile
+
+So a Dockerfile with `ENV PORT=3000` + `EXPOSE 3000` deployed without `--env PORT=3000` ends up with the app listening on 80 while the ingress targets 3000 → **502**. Always pass `--env PORT=<exposed port>` for such Dockerfiles. Details: `references/port-configuration.md`.
+
+### Running the command
+
+- **Don't pipe the output** through `tail`, `head` or `grep`. The user then sees nothing until the command exits and will assume it hangs
+- **Don't add `--wait`**. `mw experimental deploy` accepts the flag but ignores it; the command always waits until the service runs and the domain is ready (timeout: `--wait-timeout`, default 600s)
+- **Tell the user what to expect**: build and push of a small app take seconds. The first deploy to a **new hostname** also waits for the TLS certificate, which is usually the longest step. Redeploys to an existing hostname skip that wait
+
+### Expected output (interactive terminal)
 
 ```
   ✅ Pushing docker image .... done
-  💡 Pushed image registry.p-kpbj8e.project.space/app-image:latest to registry
+  💡 Pushed image registry.p-kpbj8e.project.space/my-app:latest to registry
   ✅ Deploying .... done
-  💡 Service app-541e474d-d656-4e69-a9d8-722f1bcae344 is now running
-Reusing existing domain for hostname "webapp.p-kpbj8e.project.space"
+  💡 Service my-app is now running
+Creating new domain for hostname "my-app.p-kpbj8e.project.space"
   ✅ Setting up domain .... done
 
   ┌──────────────────────────────────────────────────────────────────────────────┐
@@ -68,7 +129,42 @@ Reusing existing domain for hostname "webapp.p-kpbj8e.project.space"
 
 ```
 
-**Do NOT parse the output, all information shown here is already known**
+The URL is `https://<uri-prefix>.<short-id>.project.space`; you already know it from the flags.
+
+### Expected output (non-interactive shell, e.g. agent tool calls)
+
+Without a TTY the CLI prints one line per step and ends with:
+
+```
+Completed: Process completed successfully
+
+Summary: [Complex content]
+```
+
+`[Complex content]` is a rendering bug of the CLI's plain-text renderer, not an error. Exit code `0` plus `Completed: Process completed successfully` means success.
+
+If you see `Reusing existing domain for hostname …` on a **first** deploy, the hostname already existed in the project and now points at the new container. Stop and tell the user.
+
+### Poll the app
+
+The domain is ready when the command returns, but the app may still be starting. Poll it in a short loop until the **app** answers.
+
+**Which path**: use `/` unless you found a health endpoint in the app's code (e.g. a route like `/health`, `/healthz` or `/up`). Don't guess one.
+
+**When to stop**: any response that comes from the app counts, including `404`, `401` or a redirect (an API-only app may not serve `/` at all). Only `000` (no connection) and `502`/`503`/`504` (proxy can't reach the app yet) mean "not ready":
+
+```bash
+URL=https://my-app.p-xxxxxx.project.space/
+for i in $(seq 1 12); do
+  code=$(curl -s -o /dev/null -w '%{http_code}' "$URL")
+  echo "attempt $i: $code"
+  case "$code" in 000|502|503|504) sleep 5 ;; *) break ;; esac
+done
+```
+
+- A `503` during the first seconds is normal
+- A persistent `502` means the proxy can't reach the app: a port mismatch, a crashed app, an app bound to `localhost`, … → `04-troubleshoot-deployment.md`
+- Whether the response is the *right* one (e.g. `200` with the expected content) is checked in `05-verify.md`
 
 ---
 
@@ -79,10 +175,11 @@ Reusing existing domain for hostname "webapp.p-kpbj8e.project.space"
 For a few variables:
 
 ```bash
-mw experimental deploy --wait \
+mw experimental deploy \
+  --project-id p-xxxxxx \
+  --uri-prefix my-app --service-name my-app --image-name my-app \
   --env APP_ENV=production \
-  --env API_KEY=sk-xxxxxx \
-  --project-id p-xxxxxx
+  --env API_KEY=sk-xxxxxx
 ```
 
 ### Option B: Use an environment file
@@ -101,48 +198,24 @@ APP_SECRET=secret-value
 Then deploy:
 
 ```bash
-mw experimental deploy --wait \
-  --env-file .env \
-  --project-id p-xxxxxx
+mw experimental deploy \
+  --project-id p-xxxxxx \
+  --uri-prefix my-app --service-name my-app --image-name my-app \
+  --env-file .env
 ```
 
 **Security reminder**: Add `.env` to `.gitignore`! See `references/secrets-management.md`.
 
 ---
 
-## Custom Domain Prefix
+## Redeploying
 
-The default URL prefix is `webapp`. To customize:
+Run the same command again with the **same** `--service-name`, `--image-name` and `--uri-prefix`. In a new session, recover them from the project as described in Step 3a:
 
-```bash
-mw experimental deploy --wait \
-  --uri-prefix myapp \
-  --project-id p-xxxxxx
-```
+- The existing service is updated with the new image and environment and then recreated. It keeps its ID; no second service is left behind
+- The existing domain is retargeted to the service (`Reusing existing domain…` is expected here)
 
-This creates: `https://myapp.p-xxxxxx.project.space`
-
----
-
-## Monitoring Deployment
-
-### While deployment runs
-
-- **Build logs** appear in the terminal
-- Watch for:
-  - Detected framework/language
-  - Build steps executed
-  - Image pushed successfully
-  - Container created
-
-### Common progress indicators
-
-```
-✅ Checking dev tools ....
-✅ Checking repository ....
-✅ Building Docker image ....
-✅ Setting up domain ....
-```
+A different `--service-name` creates an additional service next to the old one.
 
 ---
 
@@ -151,15 +224,17 @@ This creates: `https://myapp.p-xxxxxx.project.space`
 ### Success indicators
 
 - Exit code: `0`
-- Message: "Container XYZ was successfully deployed" or similar
-- URL provided: `https://...`
-- Container ID provided ( example UUID ): `12345678-1234-abcd-efgh-123456789999`
+- Message: "Container XYZ was successfully deployed" (TTY) or "Completed: Process completed successfully" (non-TTY)
 
 ### Failure indicators
 
 - Exit code: non-zero
-- Error messages in output
+- `ERROR: Process failed: …` or error messages in output
 - Build failed / Push failed / Deployment failed
+
+### Harmless warnings
+
+- `WARNING! Using --password via the CLI is insecure.` comes from the CLI's internal `docker login` call. Ignore it
 
 ---
 
@@ -178,11 +253,11 @@ This creates: `https://myapp.p-xxxxxx.project.space`
 - **Solution**: Delete the Dockerfile and retry to use Railpack
 - See `references/pitfalls.md` for details
 
-### "Port configuration missing"
+### Deploy succeeds, URL returns 502
 
-- Application doesn't expose a port or uses non-standard port
-- Deploy anyway, then reconfigure in mStudio UI
-- See `references/port-configuration.md`
+- The build worked, so don't touch the Dockerfile
+- Possible causes include a port mismatch (e.g. the `PORT=80` override described above), a crashed or crash-looping app, an app listening on `localhost`, or a hostname pointing at the wrong container
+- Triage with container status, logs and the virtualhost list as described in `04-troubleshoot-deployment.md`
 
 ---
 
@@ -190,7 +265,7 @@ This creates: `https://myapp.p-xxxxxx.project.space`
 
 ### If deployment succeeds
 
-1. **Note the deployment URL and container ID**
+1. **Note the deployment URL and service name**
 2. **Proceed to** `05-verify.md` to test the deployment
 3. After verification, proceed to `03-setup-github-action.md` for automation
 

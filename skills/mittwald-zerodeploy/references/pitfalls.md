@@ -44,6 +44,8 @@ Developers (or AI assistants) create a Dockerfile thinking it will help, but:
 
 ### The Solution
 
+**Only when the image build fails because of the Dockerfile.** If the build succeeded and the app is unreachable afterwards, the Dockerfile is not the cause; check Pitfall #2 instead.
+
 **Delete the Dockerfile and let Railpack handle the build:**
 
 ```bash
@@ -58,7 +60,7 @@ git push
 Then retry deployment:
 
 ```bash
-mw experimental deploy --wait --project-id p-xxxxxx
+mw experimental deploy --project-id p-xxxxxx --uri-prefix my-app --service-name my-app --image-name my-app
 ```
 
 ### Why This Works
@@ -99,22 +101,36 @@ In these cases, you're outside the "zerodeploy" use case and should use `deploy-
 
 **The result**: Deployment succeeds, container runs, but the app is not accessible (502 Bad Gateway).
 
+### Special Case: `PORT=80` Injected by the CLI
+
+`mw experimental deploy` (CLI 1.25.0) **always sets `PORT=80`** in the container environment unless you pass `--env PORT=...`. This overrides `ENV PORT=...` from a Dockerfile. The ingress, however, targets the Dockerfile's first `EXPOSE` port.
+
+Example from a real session: Dockerfile with `ENV PORT=3000` and `EXPOSE 3000`. The CLI reported success, the container log said `listening on http://0.0.0.0:80`, the virtualhost targeted `3000/tcp` → 502.
+
+**Fix**: redeploy with `--env PORT=<exposed port>` (here `--env PORT=3000`). The Dockerfile is fine; don't delete it.
+
+**Prevention**: whenever a Dockerfile exposes a port other than 80, pass `--env PORT=<that port>` on the first deploy.
+
 ### Detection
 
 **Symptom checklist**:
 
 - ✅ Deployment completed successfully
-- ✅ Container status is "Running" in mStudio
+- ✅ Container status is "Running"
 - ❌ Deployment URL returns 502 Bad Gateway or timeout
 - ❌ App not responding on expected URL
 
-**Check the logs** in mStudio:
+**Compare the two ports** (MCP tools first, CLI or mStudio UI as fallback):
 
-1. Navigate to: Container → Logs
-2. Look for startup messages like:
-   - `Listening on port 4200`
+1. Port the app listens on: `mittwald_container_logs` (`mw container logs <container-id>`). Look for startup messages like:
+   - `listening on http://0.0.0.0:80`
    - `Server running at http://0.0.0.0:9000`
    - `Started on :8081`
+2. Port the hostname targets: `mittwald_domain_virtualhost_list` (`mw domain virtualhost list`), e.g. `3000/tcp`
+
+If they differ and the app reads `PORT`, redeploy with `--env PORT=<virtualhost port>`. Otherwise reconfigure the ingress as described below.
+
+If they match, the 502 is not a port issue (crashed app, app bound to `localhost`, …); use the 502 triage in `playbooks/04-troubleshoot-deployment.md`.
 
 ### Common Port Patterns
 
@@ -287,7 +303,7 @@ For complex projects, start with the `deploy-container-action` approach (explici
 | Gotcha | Symptom | Quick Fix | Escalate If... |
 |---|---|---|---|
 | **Faulty Dockerfile** | Build fails with Docker errors | Delete Dockerfile, use Railpack | Dockerfile is required for custom dependencies |
-| **Hidden Port** | Container runs, URL returns 502 | Check logs, reconfigure ingress in mStudio | App uses multiple ports or custom protocols |
+| **Hidden Port** | Container runs, URL returns 502 | Compare log port with virtualhost port; redeploy with `--env PORT=<port>` or reconfigure ingress | App uses multiple ports or custom protocols |
 | **Exotic Project** | Railpack can't detect or build fails | **Escalate immediately** | Always escalate after 2-3 failed attempts |
 
 ---

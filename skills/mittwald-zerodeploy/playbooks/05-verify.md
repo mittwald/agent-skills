@@ -18,9 +18,15 @@
 
 ---
 
-## Step 1: Check Container Status in mStudio
+## Step 1: Check Container Status
 
-### Navigate to container
+### With the mittwald MCP tools (preferred)
+
+- `mittwald_container_list` → find the service by its `--service-name` and check its status
+- `mittwald_container_logs` → confirm a clean startup and the listen port
+- CLI equivalents: `mw container list --project-id <id>`, `mw container logs <container-id>`
+
+### In mStudio (fallback)
 
 1. **Go to**: mStudio → Projects → [Your Project] → Containers
 2. **Find your container**: Look for deployment URL prefix or container ID
@@ -43,12 +49,13 @@
 
 ### Get the deployment URL
 
-**From CLI output**:
+**From the deploy flags**: `https://<uri-prefix>.<project-short-id>.project.space`, e.g.
 
 ```
-Deployment successful!
-URL: https://webapp.p-xxxxxx.project.space
+https://my-app.p-xxxxxx.project.space
 ```
+
+**From the virtualhost list**: `mittwald_domain_virtualhost_list` / `mw domain virtualhost list --project-id <id>`
 
 **From mStudio UI**:
 
@@ -66,7 +73,7 @@ URL: https://webapp.p-xxxxxx.project.space
 **Method 2: curl (terminal)**
 
 ```bash
-curl -I https://webapp.p-xxxxxx.project.space
+curl -I https://my-app.p-xxxxxx.project.space
 ```
 
 **Expected response**:
@@ -81,9 +88,8 @@ content-type: text/html
 
 **502 Bad Gateway**:
 
-- Container is running but app isn't listening on expected port
-- Load `references/port-configuration.md`
-- Reconfigure ports in mStudio ingress settings
+- The proxy can't reach the app. Possible causes: port mismatch, crashed app, app bound to `localhost`, hostname pointing at another container
+- Work through the 502 triage in `04-troubleshoot-deployment.md`
 
 **504 Gateway Timeout**:
 
@@ -134,21 +140,21 @@ content-type: text/html
 **Node.js/Express**:
 
 ```bash
-curl https://webapp.p-xxxxxx.project.space
+curl https://my-app.p-xxxxxx.project.space
 # Should return HTML or JSON depending on app
 ```
 
 **Python/Flask or Django**:
 
 ```bash
-curl https://webapp.p-xxxxxx.project.space
+curl https://my-app.p-xxxxxx.project.space
 # Check for framework-specific output
 ```
 
 **PHP/Laravel**:
 
 ```bash
-curl https://webapp.p-xxxxxx.project.space
+curl https://my-app.p-xxxxxx.project.space
 # Should show Laravel welcome page or app homepage
 ```
 

@@ -23,7 +23,7 @@ Port handling is one of the most common sources of deployment issues. This refer
 
 - App listens on a port **inside** the container (e.g., 8080)
 - **Ingress** maps external requests to that internal port
-- You access it via: `https://webapp.p-xxxxxx.project.space`
+- You access it via: `https://my-app.p-xxxxxx.project.space`
 
 **If the mapping is wrong, ingress can't reach your app** → 502 error.
 
@@ -128,11 +128,38 @@ php -S 0.0.0.0:${PORT:-8000}
 
 ---
 
+## The CLI Sets `PORT=80` by Default
+
+`mw experimental deploy` (CLI 1.25.0, via `@mittwald/container-deploy`) configures the service like this:
+
+| Setting | Value |
+|---|---|
+| Container env `PORT` | `--env PORT` if given, **else always `80`** (overrides `ENV PORT` in the Dockerfile) |
+| Ingress target port | `--env PORT` if given, else the first `EXPOSE` port, else `80` |
+
+For Railpack builds (no Dockerfile, no `EXPOSE`) both sides end up at 80, which works for apps that read `PORT`.
+
+For a Dockerfile with `EXPOSE 3000` and `ENV PORT=3000`, a deploy **without** `--env PORT=3000` makes the app listen on 80 while the ingress targets 3000 → 502, even though the deploy reports success.
+
+**Rule**: if the Dockerfile exposes a port other than 80, always deploy with `--env PORT=<exposed port>`.
+
+---
+
 ## Detecting the Actual Port
 
-If your app doesn't respond on the expected port, **check the logs**:
+If your app doesn't respond, compare the port in the **container log** with the **virtualhost's target port**:
 
-### In mStudio UI
+### With the mittwald MCP tools (preferred)
+
+1. `mittwald_container_list` → find the service
+2. `mittwald_container_logs` → look for the listen port (e.g. `listening on http://0.0.0.0:80`)
+3. `mittwald_domain_virtualhost_list` → find the hostname's target container and port (e.g. `3000/tcp`)
+
+CLI equivalents: `mw container list`, `mw container logs <container-id>`, `mw domain virtualhost list`.
+
+If the two ports differ and the app reads `PORT`, redeploy with `--env PORT=<virtualhost port>` (Solution 2 below).
+
+### In mStudio UI (fallback)
 
 1. Navigate to: `mStudio → Projects → [Your Project] → Containers`
 2. Find your container (search by URL prefix)
@@ -177,9 +204,9 @@ Quit the server with CONTROL-C.
 
 ## Fixing Port Mismatches
 
-### Solution 1: Reconfigure Ingress in mStudio (Recommended)
+### Solution 1: Reconfigure Ingress in mStudio
 
-**When to use**: Port is hardcoded or difficult to change in app code.
+**When to use**: Port is hardcoded or difficult to change in app code. If the app reads `PORT` (log shows 80 because of the CLI default), use Solution 2 instead.
 
 **Steps**:
 
@@ -201,14 +228,15 @@ Quit the server with CONTROL-C.
 
 ### Solution 2: Pass PORT Environment Variable
 
-**When to use**: App respects `PORT` env var (recommended pattern).
+**When to use**: App respects `PORT` env var (recommended pattern). Required for Dockerfiles that expose a port other than 80.
 
 **CLI deployment**:
 
 ```bash
-mw experimental deploy --wait \
-  --env PORT=8080 \
-  --project-id p-xxxxxx
+mw experimental deploy \
+  --project-id p-xxxxxx \
+  --uri-prefix my-app --service-name my-app --image-name my-app \
+  --env PORT=8080
 ```
 
 **GitHub Actions**:
@@ -385,14 +413,15 @@ This is an advanced use case. If your project requires complex port mappings, co
 
 **Diagnosis**:
 
-1. Check container logs for port binding message
+1. Check container logs for port binding message (`mittwald_container_logs`)
 2. Note the port the app is listening on
-3. Compare with ingress configuration in mStudio
+3. Compare with the virtualhost's target port (`mittwald_domain_virtualhost_list`)
 
 **Fix**:
 
-- Reconfigure ingress to match actual port
-- Or pass `PORT` env var to standardize
+- Log shows 80, virtualhost shows the `EXPOSE` port → CLI `PORT=80` default; redeploy with `--env PORT=<exposed port>`
+- Log shows another port than the virtualhost → reconfigure ingress to match actual port
+- Ports match → not a port issue; see the 502 triage in `04-troubleshoot-deployment.md`
 
 ### Issue: Connection Refused
 
