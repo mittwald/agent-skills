@@ -197,7 +197,7 @@ No buildpack found for this project
 
 ## Deployment Command
 ```bash
-mw experimental deploy --wait --env-file .env --project-id p-abc123
+mw experimental deploy --env-file .env --project-id p-abc123 --uri-prefix my-app --service-name my-app --image-name my-app
 ```
 
 ## Request

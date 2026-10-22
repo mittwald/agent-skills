@@ -1,6 +1,6 @@
 # Playbook: Troubleshoot Deployment
 
-**Goal**: Diagnose and fix common deployment failures using mStudio UI and systematic debugging.
+**Goal**: Diagnose and fix common deployment failures using the mittwald MCP tools (or CLI) and systematic debugging. The mStudio web UI is the fallback.
 
 ---
 
@@ -13,11 +13,15 @@
 - **Deployment failure**: Container created but won't start
 - **Runtime failure**: Container starts but app doesn't work
 
+**If the build succeeded, the Dockerfile is not the problem.** For deployment and runtime failures, check logs and ports first and skip Gotcha #1.
+
 ### 2. Gather information
 
+Use the first surface that is available (see [Inspecting the deployment](#inspecting-the-deployment)):
+
 - CLI/workflow error output
-- mStudio container logs
-- Container status in mStudio UI
+- Container status and logs: `mittwald_container_list`, `mittwald_container_logs`
+- Hostname → container/port mapping: `mittwald_domain_virtualhost_list`
 
 ### 3. Apply known fixes
 
@@ -35,6 +39,8 @@
 ## Critical Gotcha #1: Faulty Dockerfile
 
 ### Symptom
+
+**Only applies when the image build fails.** A 502 after a successful deploy is Gotcha #2, not this one.
 
 - Build fails with Docker-related errors
 - Error messages mention Dockerfile syntax or invalid instructions
@@ -64,7 +70,7 @@ rm docker-compose.yml  # If exists
 Then retry deployment:
 
 ```bash
-mw experimental deploy --wait --project-id p-xxxxxx
+mw experimental deploy --project-id p-xxxxxx --uri-prefix my-app --service-name my-app --image-name my-app
 ```
 
 ### Why this works
@@ -85,25 +91,41 @@ mw experimental deploy --wait --project-id p-xxxxxx
 
 ### Root cause
 
+- **`PORT=80` injected by the CLI**: `mw experimental deploy` sets `PORT=80` in the container environment unless `--env PORT=...` is passed. This overrides `ENV PORT=...` from a Dockerfile, while the ingress targets the Dockerfile's `EXPOSE` port. Most common with hand-written Dockerfiles that expose something other than 80
 - App listens on unexpected port (not 8080, 3000, 5000, etc.)
 - Port is hardcoded in obscure config file or even source code
 - Framework uses non-standard default port
 
 ### Detection
 
-Ask user to check logs in mStudio:
+Compare the **port the app listens on** with the **port the hostname targets**:
 
-1. Navigate to: `mStudio → Project → Containers`
-2. Find the container (search by deployment URL prefix)
-3. Click on container → View logs
-4. Look for lines like:
-   - `Listening on port 4200`
+1. `mittwald_container_list` → find the service (by `--service-name`)
+2. `mittwald_container_logs` for that container → look for lines like:
+   - `listening on http://0.0.0.0:80`
    - `Server running at http://0.0.0.0:9000`
    - `Started on :8081`
+3. `mittwald_domain_virtualhost_list` → find the hostname, note its target container and port (e.g. `3000/tcp`)
+
+CLI equivalents: `mw container list`, `mw container logs <container-id>`, `mw domain virtualhost list`. Without either, ask the user to check the container's logs and the domain's target in the mStudio web UI.
+
+**If the log shows port 80 but the virtualhost targets another port**, it's the `PORT=80` injection.
 
 ### Solution
 
-**Deploy first, reconfigure ports afterward:**
+**Case A: app respects `PORT` (log shows 80, virtualhost shows the exposed port)**
+
+Redeploy with the same names and the exposed port:
+
+```bash
+mw experimental deploy --project-id p-xxxxxx \
+  --uri-prefix my-app --service-name my-app --image-name my-app \
+  --env PORT=3000
+```
+
+Don't delete or edit the Dockerfile; it is fine.
+
+**Case B: port is hardcoded in the app**
 
 1. **Let deployment complete** (even if app isn't accessible)
 2. **Find the actual port** from container logs
@@ -240,9 +262,23 @@ the project.
 
 ---
 
-## Using mStudio for Debugging
+## Inspecting the deployment
 
-### Access container logs
+### Preferred: mittwald MCP tools
+
+When the mittwald MCP server is connected, use these first. They answer most questions in seconds:
+
+| Question | MCP tool | CLI equivalent |
+|---|---|---|
+| Is the service running? Which ID? | `mittwald_container_list` | `mw container list --project-id <id>` |
+| What does the app log (port, crashes)? | `mittwald_container_logs` | `mw container logs <container-id>` |
+| Which container and port does a hostname target? | `mittwald_domain_virtualhost_list` | `mw domain virtualhost list --project-id <id>` |
+
+Only send the user to the web UI when neither MCP nor CLI is available, or for changes those surfaces can't make.
+
+### Fallback: mStudio web UI
+
+#### Access container logs
 
 1. **Navigate to**: `mStudio → Projects → [Your Project] → Containers`
 2. **Find your container**: Look for deployment URL prefix or container ID
@@ -253,7 +289,7 @@ the project.
    - Uncaught exceptions
    - Configuration errors
 
-### Check container status
+#### Check container status
 
 **Status indicators**:
 
@@ -262,14 +298,14 @@ the project.
 - **Crashed**: Container failed to start or died (check logs!)
 - **Stopped**: Container was manually stopped
 
-### Edit environment variables
+#### Edit environment variables
 
 1. **Container details page** → Environment variables tab
 2. **Add/edit variables** directly in UI
 3. **Save** → Container restarts automatically
 4. **Check logs** to verify changes took effect
 
-### Reconfigure ports and ingress
+#### Reconfigure ports and ingress
 
 1. **Container details page** → ports tab
 2. **View current port mappings**
@@ -281,10 +317,10 @@ the project.
 
 ## Systematic Debugging Process
 
-### Step 1: Check the 3 gotchas first
+### Step 1: Check the 3 gotchas first, in this order
 
-1. ✅ Dockerfile present? → Delete and retry
-2. ✅ Port mismatch? → Check logs, reconfigure in UI
+1. ✅ Deploy succeeded but 502? → Compare log port with virtualhost port (Gotcha #2). Redeploy with `--env PORT=<exposed port>` or reconfigure ingress
+2. ✅ Build failed because of the Dockerfile? → Delete it and retry (Gotcha #1). Never for runtime failures
 3. ✅ Exotic project? → Escalate if 2-3 attempts failed
 
 ### Step 2: Review error output
@@ -293,9 +329,9 @@ the project.
 - Look for patterns in common errors above
 - Note which stage failed (build, push, deploy, runtime)
 
-### Step 3: Check mStudio logs
+### Step 3: Check container logs
 
-- Navigate to container in mStudio UI
+- `mittwald_container_logs` (or `mw container logs`); web UI as fallback
 - Read the most recent logs
 - Look for application-level errors
 

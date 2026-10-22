@@ -38,18 +38,18 @@ Trigger this skill when the user wants to:
 **Goal**: Validate the deployment locally before setting up automation.
 
 1. **Load** `playbooks/01-provision-target.md`
-   - Verify mStudio project exists and user has API token
-   - Confirm project ID is configured or can be passed explicitly
-   - Check CLI is installed and authenticated
+   - Check CLI, Docker and Railpack are installed and authenticated
+   - **Have the user confirm the target project** (use context project / pick another / create new)
+   - Check an existing project for colliding services and hostnames
 
 2. **Load** `playbooks/02-cli-deploy-local.md`
-   - Run `mw experimental deploy` from project root
-   - Handle environment variables via `--env` or `--env-file`
-   - Parse deployment output for URL and container ID
-   - Verify the app is reachable
+   - Derive `--uri-prefix`, `--service-name`, `--image-name` from the app name
+   - Run `mw experimental deploy` from project root (no `--wait`, no output piping)
+   - Pass `--env PORT=<port>` when a Dockerfile exposes a port other than 80
+   - Poll the URL with `curl` until the app answers
 
 3. **Load** `playbooks/05-verify.md`
-   - Check container status in mStudio web UI
+   - Check container status (MCP tools first, web UI as fallback)
    - Test HTTP endpoints and validate responses
    - Confirm environment variables are applied correctly
 
@@ -75,10 +75,10 @@ Trigger this skill when the user wants to:
 **When deployment fails or behaves unexpectedly:**
 
 - **Load** `playbooks/04-troubleshoot-deployment.md`
-  - Guide user to mStudio web UI logs
+  - Inspect via `mittwald_container_list`, `mittwald_container_logs`, `mittwald_domain_virtualhost_list`
+  - Compare log port with virtualhost port before touching any Dockerfile
   - Identify common error patterns
-  - Check for faulty Dockerfiles to delete
-  - Reconfigure ports if needed
+  - Delete a faulty Dockerfile only if the build fails
 
 **When encountering the 3 critical gotchas:**
 
@@ -118,14 +118,16 @@ Trigger this skill when the user wants to:
 
 ### Workflow Progression
 
+- ✅ **Always confirm the target project** with the user (name + short ID), even on "just do it": the context project may be stale or shared
 - ✅ **Always test locally first** with `mw experimental deploy`
+- ❌ **Never rely on default names** (`webapp`, `app-<project-id>`, `app-image`): they collide with and take over existing services and hostnames
 - ✅ **Only automate when stable** - don't set up GitHub Actions until CLI works
 - ❌ **Never mix** CLI and GitHub Actions in the same project phase
 
 ### Dockerfile Handling
 
 - ❌ **Never let AI generate Dockerfiles** for this workflow
-- ✅ **Delete existing Dockerfiles** if deployment fails (Railpack is bypassed when Dockerfile exists)
+- ✅ **Delete existing Dockerfiles** only if the **build** fails (Railpack is bypassed when Dockerfile exists); a 502 after a successful deploy is a port issue
 - ✅ **Let Railpack infer the build** - it's smarter than most AI-generated Dockerfiles
 
 ### Escalation Limits
@@ -142,9 +144,10 @@ Trigger this skill when the user wants to:
 
 - `mw experimental deploy` auto-detects Dockerfile **OR** uses Railpack
 - `mittwald/zerodeploy-action` wraps the CLI for GitHub Actions (same behavior)
-- Ingress is **automatically configured** with default `webapp` prefix (customize via `--uri-prefix`)
+- Ingress is **automatically configured**; an existing hostname with the same `--uri-prefix` is reused and retargeted
 - Environment variables: `--env KEY=VALUE` or `--env-file path/to/.env`
-- Wait for completion: `--wait` flag (default 600s timeout)
+- The CLI sets `PORT=80` in the container unless `--env PORT=...` is passed; the ingress targets the first `EXPOSE` port
+- The command always waits for the service and TLS (`--wait` is ignored; `--wait-timeout` defaults to 600s)
 
 ### Railpack Behavior
 
@@ -155,8 +158,8 @@ Trigger this skill when the user wants to:
 
 ### mStudio Integration
 
-- **Troubleshooting happens in mStudio web UI**, not via CLI
-- Logs, port inspection, container status are all GUI-based
+- **Troubleshoot with the mittwald MCP tools first** (`mittwald_container_list`, `mittwald_container_logs`, `mittwald_domain_virtualhost_list`), then `mw container …` / `mw domain virtualhost …`
+- Send the user to the mStudio web UI only as a fallback
 - Port reconfiguration is done post-deployment in ingress settings
 - Environment variables can be edited after deployment in mStudio
 

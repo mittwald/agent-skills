@@ -69,7 +69,7 @@ SMTP_PASSWORD=email-password
 **Deploy with env file**:
 
 ```bash
-mw experimental deploy --wait \
+mw experimental deploy \
   --env-file .env \
   --project-id p-xxxxxx
 ```
@@ -79,7 +79,7 @@ mw experimental deploy --wait \
 **Deploy with inline env vars**:
 
 ```bash
-mw experimental deploy --wait \
+mw experimental deploy \
   --env APP_ENV=production \
   --env API_KEY=sk-1234567890abcdef \
   --project-id p-xxxxxx
@@ -100,7 +100,7 @@ For sensitive secrets, prefer `--env-file`.
 export DATABASE_URL=$(op read "op://vault/db-credentials/url")
 export API_KEY=$(op read "op://vault/api-keys/production")
 
-mw experimental deploy --wait \
+mw experimental deploy \
   --env DATABASE_URL="$DATABASE_URL" \
   --env API_KEY="$API_KEY" \
   --project-id p-xxxxxx
