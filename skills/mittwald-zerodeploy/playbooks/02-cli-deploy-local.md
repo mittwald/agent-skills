@@ -41,6 +41,33 @@ ls -la Dockerfile docker-compose.yml
 
 ### 3. Choose names (don't rely on the defaults)
 
+`--uri-prefix`, `--service-name` and `--image-name` decide whether a deploy **updates** an existing deployment or creates a **new** one next to it. So first find out whether this app is already deployed in the target project.
+
+#### 3a. Look for an existing deployment of this app
+
+List what runs in the target project (you may already have this from `01-provision-target.md`, Step 3c):
+
+- `mittwald_container_list` / `mw container list --project-id <id>`: service names and their images
+- `mittwald_domain_virtualhost_list` / `mw domain virtualhost list --project-id <id>`: hostnames and the container each one targets
+
+A service belongs to this app if, for example, its name or image name matches the app's name (see 3b), or a hostname named after the app targets it. Earlier deploys may also have used the CLI defaults (`app-<project-id>`, `app-image`, `webapp`).
+
+**If you find a previous deployment of this app**, reuse its values, even if they don't match the naming scheme below:
+
+| Flag | Take it from |
+|---|---|
+| `--service-name` | The existing service's name |
+| `--image-name` | The image name of that service, without registry host and tag (`registry.p-xxxxxx.project.space/my-app:latest` → `my-app`) |
+| `--uri-prefix` | The `*.<short-id>.project.space` hostname targeting that service, without the suffix (`my-app.p-xxxxxx.project.space` → `my-app`) |
+
+Picking new names instead would leave the old service and hostname running next to the new deployment.
+
+**If the match is not clear** (several candidates, or a service you can't attribute to this app), show the user what you found and ask. Don't guess, since a wrong guess replaces someone else's service.
+
+**If no `*.project.space` hostname targets the service** (e.g. only a custom domain), ask the user which `--uri-prefix` to use. The deploy always creates or reuses a `<uri-prefix>.<short-id>.project.space` hostname.
+
+#### 3b. Otherwise: derive names for a first deployment
+
 Derive **one** name from the application and use it for all three naming flags:
 
 - Source, in this order: `name` in `package.json` / `pyproject.toml` / `composer.json`, the Go module's last path segment, else the directory name
@@ -52,7 +79,7 @@ Derive **one** name from the application and use it for all three naming flags:
 | `--service-name` | `app-<project-id>` | Every unnamed deploy into the project replaces the same service |
 | `--image-name` | `app-image` | Every unnamed deploy overwrites the same image tag in the project registry |
 
-If the target is an existing project, check the chosen name against `mittwald_domain_virtualhost_list` and `mittwald_container_list` first (see `01-provision-target.md`, Step 3c).
+Make sure the derived name isn't already used by a different workload in the project (service name or hostname, from the lists in 3a).
 
 ---
 
@@ -136,7 +163,7 @@ done
 ```
 
 - A `503` during the first seconds is normal
-- A persistent `502` is almost always a port mismatch → `04-troubleshoot-deployment.md`
+- A persistent `502` means the proxy can't reach the app: a port mismatch, a crashed app, an app bound to `localhost`, … → `04-troubleshoot-deployment.md`
 - Whether the response is the *right* one (e.g. `200` with the expected content) is checked in `05-verify.md`
 
 ---
@@ -183,7 +210,7 @@ mw experimental deploy \
 
 ## Redeploying
 
-Run the same command again with the **same** `--service-name` and `--uri-prefix`:
+Run the same command again with the **same** `--service-name`, `--image-name` and `--uri-prefix`. In a new session, recover them from the project as described in Step 3a:
 
 - The existing service is updated with the new image and environment and then recreated. It keeps its ID; no second service is left behind
 - The existing domain is retargeted to the service (`Reusing existing domain…` is expected here)
@@ -228,9 +255,9 @@ A different `--service-name` creates an additional service next to the old one.
 
 ### Deploy succeeds, URL returns 502
 
-- Port mismatch between the app and the ingress, most often the `PORT=80` override described above
-- Don't touch the Dockerfile; compare the port in the container log with the virtualhost's target port
-- See `04-troubleshoot-deployment.md` and `references/port-configuration.md`
+- The build worked, so don't touch the Dockerfile
+- Possible causes include a port mismatch (e.g. the `PORT=80` override described above), a crashed or crash-looping app, an app listening on `localhost`, or a hostname pointing at the wrong container
+- Triage with container status, logs and the virtualhost list as described in `04-troubleshoot-deployment.md`
 
 ---
 

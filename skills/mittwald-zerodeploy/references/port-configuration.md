@@ -420,7 +420,8 @@ This is an advanced use case. If your project requires complex port mappings, co
 **Fix**:
 
 - Log shows 80, virtualhost shows the `EXPOSE` port → CLI `PORT=80` default; redeploy with `--env PORT=<exposed port>`
-- Otherwise reconfigure ingress to match actual port
+- Log shows another port than the virtualhost → reconfigure ingress to match actual port
+- Ports match → not a port issue; see the 502 triage in `04-troubleshoot-deployment.md`
 
 ### Issue: Connection Refused
 

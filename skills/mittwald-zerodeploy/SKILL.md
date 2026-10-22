@@ -43,7 +43,7 @@ Trigger this skill when the user wants to:
    - Check an existing project for colliding services and hostnames
 
 2. **Load** `playbooks/02-cli-deploy-local.md`
-   - Derive `--uri-prefix`, `--service-name`, `--image-name` from the app name
+   - Reuse `--uri-prefix`, `--service-name`, `--image-name` of an existing deployment of this app, else derive them from the app name
    - Run `mw experimental deploy` from project root (no `--wait`, no output piping)
    - Pass `--env PORT=<port>` when a Dockerfile exposes a port other than 80
    - Poll the URL with `curl` until the app answers
@@ -121,13 +121,14 @@ Trigger this skill when the user wants to:
 - ✅ **Always confirm the target project** with the user (name + short ID), even on "just do it": the context project may be stale or shared
 - ✅ **Always test locally first** with `mw experimental deploy`
 - ❌ **Never rely on default names** (`webapp`, `app-<project-id>`, `app-image`): they collide with and take over existing services and hostnames
+- ✅ **On redeploys, reuse the names already in use** for this app in the project; new names create a second deployment next to the old one
 - ✅ **Only automate when stable** - don't set up GitHub Actions until CLI works
 - ❌ **Never mix** CLI and GitHub Actions in the same project phase
 
 ### Dockerfile Handling
 
 - ❌ **Never let AI generate Dockerfiles** for this workflow
-- ✅ **Delete existing Dockerfiles** only if the **build** fails (Railpack is bypassed when Dockerfile exists); a 502 after a successful deploy is a port issue
+- ✅ **Delete existing Dockerfiles** only if the **build** fails (Railpack is bypassed when Dockerfile exists); a 502 after a successful deploy is a runtime issue (port, crash, ...) to diagnose from logs
 - ✅ **Let Railpack infer the build** - it's smarter than most AI-generated Dockerfiles
 
 ### Escalation Limits

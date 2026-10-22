@@ -13,7 +13,7 @@
 - **Deployment failure**: Container created but won't start
 - **Runtime failure**: Container starts but app doesn't work
 
-**If the build succeeded, the Dockerfile is not the problem.** For deployment and runtime failures, check logs and ports first and skip Gotcha #1.
+**If the build succeeded, the Dockerfile is not the problem.** For deployment and runtime failures, gather information first and skip Gotcha #1.
 
 ### 2. Gather information
 
@@ -22,6 +22,19 @@ Use the first surface that is available (see [Inspecting the deployment](#inspec
 - CLI/workflow error output
 - Container status and logs: `mittwald_container_list`, `mittwald_container_logs`
 - Hostname → container/port mapping: `mittwald_domain_virtualhost_list`
+
+### Triage: 502 after a successful deploy
+
+A 502 only says that the proxy got no valid response from the app. Work through the possible causes with the information above, don't assume one:
+
+| Finding | Likely cause | Next step |
+|---|---|---|
+| Container not running, restarting, or logs end in an exception | App crashes on startup (missing env var, failed DB connection, …) | Fix the error from the logs; see [Common Error Patterns](#common-error-patterns) |
+| Log shows a different port than the virtualhost targets | Port mismatch | [Gotcha #2](#critical-gotcha-2-hidden-port-configuration) |
+| Log shows the right port, but on `127.0.0.1` / `localhost` | App not reachable from outside the container | Bind to `0.0.0.0`; see `references/port-configuration.md` |
+| Virtualhost targets a different container than the one just deployed | Hostname still points at an old or foreign service | Check service and hostname names (see `02-cli-deploy-local.md`, Step 3) |
+| Logs show the app still initializing (migrations, warm-up) | Slow startup | Wait and poll again before changing anything |
+| None of the above | Unknown | Collect logs and findings; see `references/when-to-escalate.md` |
 
 ### 3. Apply known fixes
 
@@ -40,7 +53,7 @@ Use the first surface that is available (see [Inspecting the deployment](#inspec
 
 ### Symptom
 
-**Only applies when the image build fails.** A 502 after a successful deploy is Gotcha #2, not this one.
+**Only applies when the image build fails.** For a 502 after a successful deploy, use the [triage table](#triage-502-after-a-successful-deploy) instead.
 
 - Build fails with Docker-related errors
 - Error messages mention Dockerfile syntax or invalid instructions
@@ -109,7 +122,7 @@ Compare the **port the app listens on** with the **port the hostname targets**:
 
 CLI equivalents: `mw container list`, `mw container logs <container-id>`, `mw domain virtualhost list`. Without either, ask the user to check the container's logs and the domain's target in the mStudio web UI.
 
-**If the log shows port 80 but the virtualhost targets another port**, it's the `PORT=80` injection.
+**If the log shows port 80 but the virtualhost targets another port**, it's the `PORT=80` injection. **If both ports match**, the 502 has a different cause; go back to the [triage table](#triage-502-after-a-successful-deploy).
 
 ### Solution
 
@@ -319,7 +332,7 @@ Only send the user to the web UI when neither MCP nor CLI is available, or for c
 
 ### Step 1: Check the 3 gotchas first, in this order
 
-1. ✅ Deploy succeeded but 502? → Compare log port with virtualhost port (Gotcha #2). Redeploy with `--env PORT=<exposed port>` or reconfigure ingress
+1. ✅ Deploy succeeded but 502? → Work through the [triage table](#triage-502-after-a-successful-deploy): container status, logs, log port vs. virtualhost port (Gotcha #2), bind address, virtualhost target
 2. ✅ Build failed because of the Dockerfile? → Delete it and retry (Gotcha #1). Never for runtime failures
 3. ✅ Exotic project? → Escalate if 2-3 attempts failed
 

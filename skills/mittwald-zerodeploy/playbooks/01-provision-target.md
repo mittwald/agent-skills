@@ -100,7 +100,12 @@ List what already runs there before deploying:
 - `mittwald_container_list` / `mw container list --project-id <project-id>`: existing services and their names
 - `mittwald_domain_virtualhost_list` / `mw domain virtualhost list --project-id <project-id>`: existing hostnames with their target container and port
 
-Make sure the service name and hostname you plan to use in `02-cli-deploy-local.md` don't exist yet, unless the user explicitly wants to replace that service or hostname.
+Sort what you find into two groups:
+
+- **A previous deployment of this app**: reuse its service name, image name and hostname prefix (see `02-cli-deploy-local.md`, Step 3a)
+- **Other workloads**: the names you pick in `02-cli-deploy-local.md` must not collide with their service names or hostnames, unless the user explicitly wants to replace that service or hostname
+
+If you can't tell which group a service belongs to, ask the user.
 
 ### 3d. Remember the project ID
 

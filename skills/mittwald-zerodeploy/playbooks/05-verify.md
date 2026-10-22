@@ -88,9 +88,8 @@ content-type: text/html
 
 **502 Bad Gateway**:
 
-- Container is running but app isn't listening on expected port
-- Load `references/port-configuration.md`
-- Reconfigure ports in mStudio ingress settings
+- The proxy can't reach the app. Possible causes: port mismatch, crashed app, app bound to `localhost`, hostname pointing at another container
+- Work through the 502 triage in `04-troubleshoot-deployment.md`
 
 **504 Gateway Timeout**:
 

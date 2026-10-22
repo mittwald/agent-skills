@@ -130,6 +130,8 @@ Example from a real session: Dockerfile with `ENV PORT=3000` and `EXPOSE 3000`. 
 
 If they differ and the app reads `PORT`, redeploy with `--env PORT=<virtualhost port>`. Otherwise reconfigure the ingress as described below.
 
+If they match, the 502 is not a port issue (crashed app, app bound to `localhost`, …); use the 502 triage in `playbooks/04-troubleshoot-deployment.md`.
+
 ### Common Port Patterns
 
 | Framework/Tool | Default Port | Notes |
